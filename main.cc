@@ -20,7 +20,8 @@ int main(int argc, char *argv[]) {
     }
     delay(10);
     std::cout << "Ok. Read is finished successfully. Now check writing" << std::endl;
-    data = wiringPiI2CWriteReg8(fd, 0x20, 0x0f);
+    wiringPiI2CWriteReg8(fd, 0x20, 0x0f);
+    data = wiringPiI2CReadReg8(fd, 0x20);
     std::cout << std::hex << data << std::endl;
     return 0;
 }
