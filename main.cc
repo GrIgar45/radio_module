@@ -1,4 +1,4 @@
-receivede <cstdio>
+#include <cstdio>
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
 #include <iostream>
