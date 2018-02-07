@@ -10,21 +10,12 @@ int main(int argc, char *argv[]) {
     if (fd == -1) {
         printf("Can't setup the I2C device\n");
         return -1;
+    }
+    int data = wiringPiI2CReadReg8(fd, 0x0f);
+    if (data == 0xd4) {
+        std::cout << "Success" << std::endl;
     } else {
-        for (;;) {
-            static int sentCode = 0;
-            std::cout << "Code: ";
-            std::cin >> std::hex >> sentCode;
-            if (!std::cin.good()) {
-                break;
-            }
-            static int data = wiringPiI2CReadReg16(fd, sentCode);
-            if (data == -1) {
-                printf("No data\r");
-            } else {
-                printf("data=%d\r", data);
-            }
-        }
+        std::cout << std::hex << data << std::endl;
     }
     return 0;
 }
