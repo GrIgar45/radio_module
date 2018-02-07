@@ -18,11 +18,11 @@ int main (int argc, char *argv[])
             data=wiringPiI2CRead(fd);
             if(data==-1)
             {
-                printf("No data\n");
+                printf("No data\r");
                 //return -1;
             } else {
                 //print data
-                printf("data=%d\n", data);
+                printf("data=%d\r", data);
             }
         }
     }
