@@ -1,4 +1,4 @@
-#include <cstdio>
+receivede <cstdio>
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
 #include <iostream>
@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
             if (!std::cin.good()) {
                 break;
             }
-            static int data = wiringPiI2CReadReg8(fd, sentCode);
+            static int data = wiringPiI2CReadReg16(fd, sentCode);
             if (data == -1) {
                 printf("No data\r");
             } else {
