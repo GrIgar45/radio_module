@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) {
         for (float d : data) {
             std::cout << d;
         }
+        delay(1000);
     }
     return 0;
 }
