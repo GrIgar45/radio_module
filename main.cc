@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
+#include <iostream>
 
 
 int main(int argc, char *argv[]) {
@@ -11,7 +12,13 @@ int main(int argc, char *argv[]) {
         return -1;
     } else {
         for (;;) {
-            static int data = wiringPiI2CRead(fd);
+            static int sentCode = 0;
+            std::cout << "Code: ";
+            std::cin >> std::hex >> sentCode;
+            if (!std::cin.good()) {
+                break;
+            }
+            static int data = wiringPiI2CReadReg8(fd, sentCode);
             if (data == -1) {
                 printf("No data\r");
             } else {
