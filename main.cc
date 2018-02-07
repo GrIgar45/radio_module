@@ -41,11 +41,10 @@ int main(int argc, char *argv[]) {
     float data[3];
     while (true) {
         readData(fd, data);
-        std::cout << "                                  ";
+        std::cout << "\r                                  \r";
         for (float d : data) {
             std::cout << d;
         }
-        std::cout << "\r" << std::endl;
     }
     return 0;
 }
