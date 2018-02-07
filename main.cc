@@ -45,7 +45,7 @@ int main(int argc, char **argv){
                (float)gyroData[0]*0.00875, (float)gyroData[1]*0.00875, (float)gyroData[2]*0.00875);
         delay(100);
     }
-    return;
+    return 1;
 }
 
 
