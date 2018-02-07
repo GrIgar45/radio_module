@@ -41,11 +41,11 @@ int main(int argc, char *argv[]) {
     float data[3];
     while (true) {
         readData(fd, data);
-        std::cout << "\r                                  \r";
         for (float d : data) {
             std::cout << d;
         }
-        delay(1000);
+        std::cout << std::endl;
+        delay(20);
     }
     return 0;
 }
