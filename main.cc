@@ -2,6 +2,8 @@
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
 #include <iostream>
+#include <iomanip>
+
 
 void readData(int &fd, float *outData) {
     static const int n = 6;
@@ -39,10 +41,11 @@ int main(int argc, char *argv[]) {
         }
     }
     float data[3];
+    std::cout << std::fixed << std::setprecision(2);
     while (true) {
         readData(fd, data);
         for (float d : data) {
-            std::cout << d;
+            std::cout << d << ": ";
         }
         std::cout << std::endl;
         delay(20);
