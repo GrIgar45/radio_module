@@ -3,7 +3,7 @@
 #include <wiringPiI2C.h>
 #include <iostream>
 
-void readData(int &fd, float &outData[]) {
+void readData(int &fd, float *outData) {
     static const int n = 6;
     static int deliveredData[n];
     for (int i = 0; i < n; i++) {
