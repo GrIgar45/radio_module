@@ -17,8 +17,9 @@ void readData(int &fd, float *outData) {
         deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
     }
     for (int data : deliveredData) {
-        add::log << data << std::endl;
+        add::log << data << ", ";
     }
+    add::log << "=========================" << std::endl;
     for (int i = 0; i < 3; i++) {
         static int j = i << 1;
         outData[i] = (deliveredData[j + 1] << 16 | deliveredData[j]) * 0.00875f;
