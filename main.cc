@@ -39,6 +39,7 @@ void readData(int &fd, float *outData) {
         add::dataConversion.lock();
         for (int i = 0; i < 3; i++) {
             static int j = i << 1;
+            if (deliveredData[j] < 50) { continue; }
             // If the highest bit is high, the sign is negative.
             static int sign = (deliveredData[j + 1] & 0x80) ? -1 : 1;
 //            if (sign == -1) { std::cout << "\n NEGATIVE\r"; }
