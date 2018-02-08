@@ -41,15 +41,15 @@ void readData(int &fd, float *outData) {
             static int j = i << 1;
             if (deliveredData[j] < 50) { continue; }
             // If the highest bit is high, the sign is negative.
-            static int sign = (deliveredData[j + 1] & 0x80) ? -1 : 1;
+            int sign = ((deliveredData[j + 1] & 0x80) == 0) ? 1 : -1;
 //            if (sign == -1) { std::cout << "\n NEGATIVE\r"; }
             // Shift the high bits and remove the sign value.
             // + FS * 0.001 * microsecond spend
-            // FS = 250 dps     8.75 mdps/digit
-            // FS = 500 dps     17.50
-            // FS = 2000 dps    70
-            static float data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff);
-            outData[i] += (std::abs(data) < 0xf) ? 0 : data * 0.07f * sign;
+            // FS = 250  dps     8.75 mdps/digit
+            // FS = 500  dps     17.50
+            // FS = 2000 dps     70
+            static int data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff);
+            outData[i] += data * 0.07f * sign;
         }
         add::dataConversion.unlock();
         std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));
