@@ -48,7 +48,7 @@ void readData(int &fd, float *outData) {
             // FS = 500 dps     17.50
             // FS = 2000 dps    70
             static float data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff);
-            outData[i] += (std::abs(data) < 0x64) ? 0 : data * 0.07f * sign;
+            outData[i] += (std::abs(data) < 0x24) ? 0 : data * 0.07f * sign;
         }
         add::dataConversion.unlock();
         std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));
