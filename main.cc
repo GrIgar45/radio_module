@@ -21,9 +21,14 @@ enum reg {
 };
 
 void readData(int &fd, float *outData) {
+    std::chrono::high_resolution_clock::time_point newMeasuring, lastMeasuring;
+    lastMeasuring = std::chrono::high_resolution_clock::now();
+    std::chrono::high_resolution_clock::duration timeSpend {};
     while (true) {
         static const int n = 6;
         static int deliveredData[n];
+        lastMeasuring = newMeasuring;
+        newMeasuring = std::chrono::system_clock::now();
         for (int i = 0; i < n; i++) {
             deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
         }
@@ -33,8 +38,9 @@ void readData(int &fd, float *outData) {
             static int sign = (deliveredData[j + 1] & 0x8000) ? -1 : 1;
             // Shift the high bits and remove the sign value.
             //
+            timeSpend = newMeasuring - lastMeasuring;
             outData[i] += ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff * sign)
-                          * 0.07f * (add::DELAY * 0.001f);
+                          * 0.07f * (std::chrono::duration_cast<std::chrono::microseconds>(timeSpend).count() * 0.001f);
             if (outData[i] < 0x0a) {
                 outData[i] = 0;
             }
@@ -46,15 +52,15 @@ void readData(int &fd, float *outData) {
 int main(int argc, char *argv[]) {
     wiringPiSetup();
     std::cout << "Start initialize L3GD20" << std::endl;
-    int fd = wiringPiI2CSetup(reg ::GYRO_ADRESS);
+    int fd = wiringPiI2CSetup(reg::GYRO_ADRESS);
     if (fd == -1) {
         std::cerr << "Can't setup the I2C device" << std::endl;
         return 1;
     }
     std::cout << "Ok. Check reading." << std::endl;
     {
-        int data = wiringPiI2CReadReg8(fd, reg ::WHO_AM_I);
-        if (data != reg ::GYRO_NAME) {
+        int data = wiringPiI2CReadReg8(fd, reg::WHO_AM_I);
+        if (data != reg::GYRO_NAME) {
             std::cerr << "L3GD20 is not working." << std::endl;
             return 1;
         }
@@ -79,11 +85,11 @@ int main(int argc, char *argv[]) {
         }
         wiringPiI2CWriteReg8(fd, 0x23, 0x30);
     }
+    std::cout << "Getting data" << std::endl;
     float data[] = {.0, .0, .0};
     std::cout << std::fixed << std::setprecision(3);
     std::thread getData(readData, std::ref(fd), std::ref(data));
     while (true) {
-        readData(fd, data);
         for (float d : data) {
             std::cout << d << ": ";
         }
