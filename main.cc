@@ -50,10 +50,8 @@ void readData(int &fd, float *outData) {
             // FS = 250 dps     8.75 mdps/digit
             // FS = 500 dps     17.50
             // FS = 2000 dps    70
-            static float data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff * sign)
-                                * 0.00875f * timeSpend;
-//            outData[i] += (data < 0x0a) ? 0 : data;
-            outData[i] += data;
+            static float data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff);
+            outData[i] += (data < 0x0a) ? 0 : data * 0.00875f * timeSpend * sign;
         }
         add::dataConversion.unlock();
         std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));;
