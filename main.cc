@@ -53,7 +53,7 @@ void readData(int &fd, float *outData) {
         }
         std::cin.get();
         add::dataConversion.unlock();
-        std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));
+//        std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));
     }
 }
 
