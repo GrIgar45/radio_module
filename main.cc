@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
             std::cerr << "Writing isn't worked" << std::endl;
         }
         // set FS = 2000 dps;
-        wiringPiI2CWriteReg8(fd, 0x23, 0x00);
+        wiringPiI2CWriteReg8(fd, 0x23, 0x20);
         data = wiringPiI2CReadReg8(fd, 0x23);
         if (data != 0x00) {
             std::cerr << "Can't set DPS value" << std::endl;
