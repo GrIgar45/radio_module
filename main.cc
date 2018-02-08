@@ -33,7 +33,7 @@ void readData(int &fd, float *outData) {
         lastMeasuring = newMeasuring;
         newMeasuring = std::chrono::system_clock::now();
         for (int i = 0; i < n; i++) {
-            deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
+            std::cout << (deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i)) << ":";
         }
         long timeSpend = std::chrono::duration_cast<std::chrono::microseconds>(newMeasuring - lastMeasuring).count();
         add::dataConversion.lock();
@@ -50,6 +50,7 @@ void readData(int &fd, float *outData) {
             static float data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff);
             outData[i] += (data < 0x64) ? 0 : data * 0.00875f * sign;
         }
+        std::cin.get();
         add::dataConversion.unlock();
         std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));
     }
