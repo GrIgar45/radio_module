@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <thread>
 
 
 namespace add {
@@ -20,22 +21,25 @@ enum reg {
 };
 
 void readData(int &fd, float *outData) {
-    static const int n = 6;
-    static int deliveredData[n];
-    for (int i = 0; i < n; i++) {
-        deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
-    }
-//    for (int data : deliveredData) {
-//        add::log << data << ", ";
-//    }
-//    add::log  << std::endl;
-    for (int i = 0; i < 3; i++) {
-        static int j = i << 1;
-        // If the highest bit is high, the sign is negative.
-        static int sign = (deliveredData[j + 1] & 0x8000) ? -1 : 1;
-        // Shift the high bits and remove the sign value.
-        //
-        outData[i] = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff * sign) * 0.07f * (add::DELAY * 0.001f);
+    while (true) {
+        static const int n = 6;
+        static int deliveredData[n];
+        for (int i = 0; i < n; i++) {
+            deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
+        }
+        for (int i = 0; i < 3; i++) {
+            static int j = i << 1;
+            // If the highest bit is high, the sign is negative.
+            static int sign = (deliveredData[j + 1] & 0x8000) ? -1 : 1;
+            // Shift the high bits and remove the sign value.
+            //
+            outData[i] += ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff * sign)
+                          * 0.07f * (add::DELAY * 0.001f);
+            if (outData[i] < 0x0a) {
+                outData[i] = 0;
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));;
     }
 }
 
@@ -75,15 +79,16 @@ int main(int argc, char *argv[]) {
         }
         wiringPiI2CWriteReg8(fd, 0x23, 0x30);
     }
-    float data[3];
-    std::cout << std::fixed << std::setprecision(2);
+    float data[] = {.0, .0, .0};
+    std::cout << std::fixed << std::setprecision(3);
+    std::thread getData(readData, std::ref(fd), std::ref(data));
     while (true) {
         readData(fd, data);
         for (float d : data) {
             std::cout << d << ": ";
         }
         std::cout << std::endl;
-        delay(add::DELAY);
+        delay(1000);
     }
     return 0;
 }
