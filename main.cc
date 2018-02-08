@@ -3,7 +3,12 @@
 #include <wiringPiI2C.h>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 
+
+namespace add {
+    std::ofstream log("log.txt", std::ofstream::trunc);
+}
 
 void readData(int &fd, float *outData) {
     static const int n = 6;
@@ -11,8 +16,11 @@ void readData(int &fd, float *outData) {
     for (int i = 0; i < n; i++) {
         deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
     }
+    for (int data : deliveredData) {
+        add::log << data << std::endl;
+    }
     for (int i = 0; i < 3; i++) {
-        static int j = i * 2;
+        static int j = i << 1;
         outData[i] = (deliveredData[j + 1] << 16 | deliveredData[j]) * 0.00875f;
     }
 }
@@ -48,7 +56,7 @@ int main(int argc, char *argv[]) {
             std::cout << d << ": ";
         }
         std::cout << std::endl;
-        delay(20);
+        delay(100);
     }
     return 0;
 }
