@@ -10,7 +10,8 @@
 
 namespace add {
 //    std::ofstream log("log.txt", std::ofstream::trunc);
-    std::mutex dataReceiving;
+    std::mutex dataConversion;
+
     const int DELAY = 20;
 }
 
@@ -33,21 +34,22 @@ void readData(int &fd, float *outData) {
         for (int i = 0; i < n; i++) {
             deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
         }
-        long timeSpend = std::chrono::duration_cast<std::chrono::milliseconds>(newMeasuring - lastMeasuring).count();
-        add::dataReceiving.lock();
+        long timeSpend = std::chrono::duration_cast<std::chrono::microseconds>(newMeasuring - lastMeasuring).count();
+        add::dataConversion.lock();
         for (int i = 0; i < 3; i++) {
             static int j = i << 1;
             // If the highest bit is high, the sign is negative.
             static int sign = (deliveredData[j + 1] & 0x8000) ? -1 : 1;
             // Shift the high bits and remove the sign value.
-            //
-            outData[i] += ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff * sign)
-                          * 0.07f * (timeSpend * 0.001f);
-            if (outData[i] < 0x0a) {
-                outData[i] = 0;
-            }
+            // + FS * 0.001 * microsecond spend
+            // FS = 250 dps     8.75 mdps/digit
+            // FS = 500 dps     17.50
+            // FS = 2000 dps    70
+            static float data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff * sign)
+                                * 0.07f * timeSpend;
+            outData[i] += (data < 0x0a) ? 0 : data;
         }
-        add::dataReceiving.unlock();
+        add::dataConversion.unlock();
         std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));;
     }
 }
@@ -86,6 +88,7 @@ int main(int argc, char *argv[]) {
         if (data != reg::NORMAL_MODE) {
             std::cerr << "Writing isn't worked" << std::endl;
         }
+        // set FS = 2000 dps;
         wiringPiI2CWriteReg8(fd, 0x23, 0x30);
     }
     std::cout << "Getting data" << std::endl;
@@ -93,11 +96,11 @@ int main(int argc, char *argv[]) {
     std::cout << std::fixed << std::setprecision(3);
     std::thread getData(readData, std::ref(fd), std::ref(data));
     while (true) {
-        add::dataReceiving.lock();
+        add::dataConversion.lock();
         for (float d : data) {
             std::cout << d << ": ";
         }
-        add::dataReceiving.unlock();
+        add::dataConversion.unlock();
         std::cout << std::endl;
         delay(1000);
     }
