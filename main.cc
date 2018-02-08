@@ -5,10 +5,12 @@
 #include <iomanip>
 #include <fstream>
 #include <thread>
+#include <mutex>
 
 
 namespace add {
 //    std::ofstream log("log.txt", std::ofstream::trunc);
+    std::mutex dataReceiving;
     const int DELAY = 20;
 }
 
@@ -23,7 +25,6 @@ enum reg {
 void readData(int &fd, float *outData) {
     std::chrono::high_resolution_clock::time_point newMeasuring, lastMeasuring;
     lastMeasuring = std::chrono::high_resolution_clock::now();
-    std::chrono::high_resolution_clock::duration timeSpend {};
     while (true) {
         static const int n = 6;
         static int deliveredData[n];
@@ -32,19 +33,21 @@ void readData(int &fd, float *outData) {
         for (int i = 0; i < n; i++) {
             deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
         }
+        long timeSpend = std::chrono::duration_cast<std::chrono::milliseconds>(newMeasuring - lastMeasuring).count();
+        add::dataReceiving.lock();
         for (int i = 0; i < 3; i++) {
             static int j = i << 1;
             // If the highest bit is high, the sign is negative.
             static int sign = (deliveredData[j + 1] & 0x8000) ? -1 : 1;
             // Shift the high bits and remove the sign value.
             //
-            timeSpend = newMeasuring - lastMeasuring;
             outData[i] += ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff * sign)
-                          * 0.07f * (std::chrono::duration_cast<std::chrono::microseconds>(timeSpend).count() * 0.001f);
+                          * 0.07f * (timeSpend * 0.001f);
             if (outData[i] < 0x0a) {
                 outData[i] = 0;
             }
         }
+        add::dataReceiving.unlock();
         std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));;
     }
 }
@@ -90,9 +93,11 @@ int main(int argc, char *argv[]) {
     std::cout << std::fixed << std::setprecision(3);
     std::thread getData(readData, std::ref(fd), std::ref(data));
     while (true) {
+        add::dataReceiving.lock();
         for (float d : data) {
             std::cout << d << ": ";
         }
+        add::dataReceiving.unlock();
         std::cout << std::endl;
         delay(1000);
     }
