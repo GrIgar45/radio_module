@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     sleep(1);
     final = std::chrono::high_resolution_clock::now();
 
-    std::cout << std::chrono::duration_cast<std::chrono::microseconds>(final - start).count();
+    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(final - start).count();
     return 0;
 }
 
