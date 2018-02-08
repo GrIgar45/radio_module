@@ -26,6 +26,7 @@ enum reg {
 void readData(int &fd, float *outData) {
     std::chrono::high_resolution_clock::time_point newMeasuring, lastMeasuring;
     newMeasuring = std::chrono::high_resolution_clock::now();
+    int lol = 0;
     while (true) {
         static const int n = 6;
         static int deliveredData[n];
@@ -35,6 +36,10 @@ void readData(int &fd, float *outData) {
             deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
         }
         long timeSpend = std::chrono::duration_cast<std::chrono::microseconds>(newMeasuring - lastMeasuring).count();
+        if (++lol == 100) {
+            lol = 0;
+            std::cout << std::endl << "======================" << timeSpend << std::endl;
+        }
         add::dataConversion.lock();
         for (int i = 0; i < 3; i++) {
             static int j = i << 1;
@@ -46,7 +51,7 @@ void readData(int &fd, float *outData) {
             // FS = 500 dps     17.50
             // FS = 2000 dps    70
             static float data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff * sign)
-                                * 0.07f * timeSpend;
+                                * 0.00875f * timeSpend;
             outData[i] += (data < 0x0a) ? 0 : data;
         }
         add::dataConversion.unlock();
@@ -89,7 +94,10 @@ int main(int argc, char *argv[]) {
             std::cerr << "Writing isn't worked" << std::endl;
         }
         // set FS = 2000 dps;
-        wiringPiI2CWriteReg8(fd, 0x23, 0x30);
+        wiringPiI2CWriteReg8(fd, 0x23, 0x00);
+        if (data != 0x00) {
+            std::cerr << "Can't set DPS value" << std::endl;
+        }
     }
     std::cout << "Getting data" << std::endl;
     float data[] = {.0, .0, .0};
