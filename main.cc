@@ -24,7 +24,7 @@ enum reg {
 
 void readData(int &fd, float *outData) {
     std::chrono::high_resolution_clock::time_point newMeasuring, lastMeasuring;
-    lastMeasuring = std::chrono::high_resolution_clock::now();
+    newMeasuring = std::chrono::high_resolution_clock::now();
     while (true) {
         static const int n = 6;
         static int deliveredData[n];
