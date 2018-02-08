@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
         }
         // set FS = 2000 dps;
         wiringPiI2CWriteReg8(fd, 0x23, 0x00);
+        data = wiringPiI2CReadReg8(fd, 0x23);
         if (data != 0x00) {
             std::cerr << "Can't set DPS value" << std::endl;
         }
@@ -102,9 +103,9 @@ int main(int argc, char *argv[]) {
     std::thread getData(readData, std::ref(fd), std::ref(data));
     while (true) {
         add::dataConversion.lock();
-        for (float d : data) {
-            std::cout << d << ": ";
-        }
+//        for (float d : data) {
+//            std::cout << d << ": ";
+//        }
         add::dataConversion.unlock();
         std::cout << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
