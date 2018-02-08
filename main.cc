@@ -7,8 +7,17 @@
 
 
 namespace add {
-    std::ofstream log("log.txt", std::ofstream::trunc);
+//    std::ofstream log("log.txt", std::ofstream::trunc);
+    const int DELAY = 20;
 }
+
+enum reg {
+    GYRO_ADRESS = 0x6b,
+    WHO_AM_I = 0x0f,
+    GYRO_NAME = 0xd4,
+    CTRL_REG1 = 0x20,
+    NORMAL_MODE = 0x0f
+};
 
 void readData(int &fd, float *outData) {
     static const int n = 6;
@@ -16,38 +25,55 @@ void readData(int &fd, float *outData) {
     for (int i = 0; i < n; i++) {
         deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
     }
-    for (int data : deliveredData) {
-        add::log << data << ", ";
-    }
-    add::log << "=========================" << std::endl;
+//    for (int data : deliveredData) {
+//        add::log << data << ", ";
+//    }
+//    add::log  << std::endl;
     for (int i = 0; i < 3; i++) {
         static int j = i << 1;
-        outData[i] = (deliveredData[j + 1] << 16 | deliveredData[j]) * 0.00875f;
+        // If the highest bit is high, the sign is negative.
+        static int sign = (deliveredData[j + 1] & 0x8000) ? -1 : 1;
+        // Shift the high bits and remove the sign value.
+        //
+        outData[i] = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff * sign) * 0.07f * (add::DELAY * 0.001f);
     }
 }
 
 int main(int argc, char *argv[]) {
     wiringPiSetup();
     std::cout << "Start initialize L3GD20" << std::endl;
-    int fd = wiringPiI2CSetup(0x6b);
+    int fd = wiringPiI2CSetup(reg ::GYRO_ADRESS);
     if (fd == -1) {
         std::cerr << "Can't setup the I2C device" << std::endl;
-        return -1;
+        return 1;
     }
     std::cout << "Ok. Check reading." << std::endl;
     {
-        int data = wiringPiI2CReadReg8(fd, 0x0f);
-        if (data != 0xd4) {
+        int data = wiringPiI2CReadReg8(fd, reg ::WHO_AM_I);
+        if (data != reg ::GYRO_NAME) {
             std::cerr << "L3GD20 is not working." << std::endl;
             return 1;
         }
         delay(10);
         std::cout << "Ok. Read is finished successfully. Now check writing" << std::endl;
-        wiringPiI2CWriteReg8(fd, 0x20, 0x0f);
-        data = wiringPiI2CReadReg8(fd, 0x20);
-        if (data != 0x0f) {
+
+        /**
+         * Also here we switch to the normal mode and turn on all three axis
+         * 0x0F
+         * 0000  1111
+         * power ^|||
+         * z axis ^||
+         * y axis  ^|
+         * x axis   ^
+         */
+        wiringPiI2CWriteReg8(fd, reg::CTRL_REG1, reg::NORMAL_MODE);
+        // Check the set value
+        // It should be the same as it was established
+        data = wiringPiI2CReadReg8(fd, reg::CTRL_REG1);
+        if (data != reg::NORMAL_MODE) {
             std::cerr << "Writing isn't worked" << std::endl;
         }
+        wiringPiI2CWriteReg8(fd, 0x23, 0x30);
     }
     float data[3];
     std::cout << std::fixed << std::setprecision(2);
@@ -57,7 +83,7 @@ int main(int argc, char *argv[]) {
             std::cout << d << ": ";
         }
         std::cout << std::endl;
-        delay(100);
+        delay(add::DELAY);
     }
     return 0;
 }
