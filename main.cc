@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cmath>
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
 #include <iostream>
@@ -16,7 +17,7 @@ namespace add {
 }
 
 enum reg {
-    GYRO_ADRESS = 0x6b,
+    GYRO_ADDRESS = 0x6b,
     WHO_AM_I = 0x0f,
     GYRO_NAME = 0xd4,
     CTRL_REG1 = 0x20,
@@ -24,43 +25,41 @@ enum reg {
 };
 
 void readData(int &fd, float *outData) {
-    std::chrono::high_resolution_clock::time_point newMeasuring, lastMeasuring;
-    newMeasuring = std::chrono::high_resolution_clock::now();
-    int lol = 0;
+//    std::chrono::high_resolution_clock::time_point newMeasuring, lastMeasuring;
+//    newMeasuring = std::chrono::high_resolution_clock::now();
     while (true) {
         static const int n = 6;
         static int deliveredData[n];
-        lastMeasuring = newMeasuring;
-        newMeasuring = std::chrono::system_clock::now();
+//        lastMeasuring = newMeasuring;
+//        newMeasuring = std::chrono::system_clock::now();
         for (int i = 0; i < n; i++) {
             std::cout << (deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i)) << ":";
         }
         std::cout << std::endl;
-        long timeSpend = std::chrono::duration_cast<std::chrono::microseconds>(newMeasuring - lastMeasuring).count();
+//        long timeSpend = std::chrono::duration_cast<std::chrono::microseconds>(newMeasuring - lastMeasuring).count();
         add::dataConversion.lock();
         for (int i = 0; i < 3; i++) {
             static int j = i << 1;
             // If the highest bit is high, the sign is negative.
-            static int sign = (deliveredData[j + 1] & 0x8000) ? -1 : 1;
-            if (sign == -1) { std::cout << "\n NEGATIVE\r"; }
+            static int sign = (deliveredData[j + 1] & 0x80) ? -1 : 1;
+//            if (sign == -1) { std::cout << "\n NEGATIVE\r"; }
             // Shift the high bits and remove the sign value.
             // + FS * 0.001 * microsecond spend
             // FS = 250 dps     8.75 mdps/digit
             // FS = 500 dps     17.50
             // FS = 2000 dps    70
             static float data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff);
-            outData[i] += (data < 0x64) ? 0 : data * 0.00875f * sign;
+            outData[i] += (std::abs(data) < 0x64) ? 0 : data * 0.07f * sign;
         }
-        std::cin.get();
         add::dataConversion.unlock();
-//        std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));
+        std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));
     }
 }
 
 int main(int argc, char *argv[]) {
     wiringPiSetup();
     std::cout << "Start initialize L3GD20" << std::endl;
-    int fd = wiringPiI2CSetup(reg::GYRO_ADRESS);
+    int fd = wiringPiI2CSetup(reg::GYRO_ADDRESS);
     if (fd == -1) {
         std::cerr << "Can't setup the I2C device" << std::endl;
         return 1;
@@ -100,16 +99,16 @@ int main(int argc, char *argv[]) {
     }
     std::cout << "Getting data" << std::endl;
     float data[] = {.0, .0, .0};
-//    std::cout << std::fixed << std::setprecision(3);
+    std::cout << std::fixed << std::setprecision(3);
     std::thread getData(readData, std::ref(fd), std::ref(data));
     while (true) {
         add::dataConversion.lock();
-//        for (float d : data) {
-//            std::cout << d << ": ";
-//        }
+        for (float d : data) {
+            std::cout << d << ": ";
+        }
         add::dataConversion.unlock();
         std::cout << std::endl;
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    return 0;
+//    return 0;
 }
