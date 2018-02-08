@@ -13,7 +13,7 @@ namespace add {
 //    std::ofstream log("log.txt", std::ofstream::trunc);
     std::mutex dataConversion;
 
-    const int DELAY = 20;
+    const int DELAY = 2;
 }
 
 enum reg {
@@ -52,7 +52,10 @@ void readData(int &fd, float *outData) {
             outData[i] += data * 0.07f * sign;
         }
         add::dataConversion.unlock();
-        std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));
+        while ((wiringPiI2CReadReg8(fd, 0x27) & 0x8) != 0x8) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));
+        }
+        std::cout << "Out of sleeping" << std::endl;
     }
 }
 
