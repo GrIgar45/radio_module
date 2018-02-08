@@ -36,22 +36,19 @@ void readData(int &fd, float *outData) {
             deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
         }
         long timeSpend = std::chrono::duration_cast<std::chrono::microseconds>(newMeasuring - lastMeasuring).count();
-        if (++lol == 100) {
-            lol = 0;
-            std::cout << std::endl << "======================" << timeSpend << std::endl;
-        }
         add::dataConversion.lock();
         for (int i = 0; i < 3; i++) {
             static int j = i << 1;
             // If the highest bit is high, the sign is negative.
             static int sign = (deliveredData[j + 1] & 0x8000) ? -1 : 1;
+            if (sign == -1) { std::cout << "\n NEGATIVE\r"; }
             // Shift the high bits and remove the sign value.
             // + FS * 0.001 * microsecond spend
             // FS = 250 dps     8.75 mdps/digit
             // FS = 500 dps     17.50
             // FS = 2000 dps    70
             static float data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff);
-            outData[i] += (data < 0x0a) ? 0 : data * 0.00875f * timeSpend * sign;
+            outData[i] += (data < 0x0a) ? 0 : data * 0.00875f * sign;
         }
         add::dataConversion.unlock();
         std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));;
