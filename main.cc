@@ -32,16 +32,17 @@ void readData(int &fd, float *outData) {
         static int deliveredData[n];
         lastMeasuring = newMeasuring;
         newMeasuring = std::chrono::system_clock::now();
-        for (int i = 0; i < n; i++) {
-            deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
+        int data = wiringPiI2CReadReg8(fd, 0x28);
+        for (int &i : deliveredData) {
+            i = wiringPiI2CRead(fd);
         }
         long timeSpend = std::chrono::duration_cast<std::chrono::microseconds>(newMeasuring - lastMeasuring).count();
         add::dataConversion.lock();
         for (int i = 0; i < 3; i++) {
             static int j = i << 1;
             // If the highest bit is high, the sign is negative.
-            static int sign = (deliveredData[j + 1] & 0x8000) ? -1 : 1;
-            if (sign == -1) { std::cout << "\n NEGATIVE\r"; }
+            static int sign = (deliveredData[j + 1] & 0x80) ? -1 : 1;
+//            if (sign == -1) { std::cout << "\n NEGATIVE\r"; }
             // Shift the high bits and remove the sign value.
             // + FS * 0.001 * microsecond spend
             // FS = 250 dps     8.75 mdps/digit
