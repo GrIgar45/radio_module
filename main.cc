@@ -8,12 +8,13 @@
 #include <thread>
 #include <mutex>
 
+using namespace std::chrono_literals;
 
 namespace add {
-//    std::ofstream log("log.txt", std::ofstream::trunc);
+    std::ofstream log("log.txt", std::ofstream::trunc);
     std::mutex dataConversion;
 
-    const int DELAY = 20;
+    const auto DELAY = 20ms;
 }
 
 enum reg {
@@ -25,35 +26,39 @@ enum reg {
 };
 
 void readData(int &fd, float *outData) {
-//    std::chrono::high_resolution_clock::time_point newMeasuring, lastMeasuring;
-//    newMeasuring = std::chrono::high_resolution_clock::now();
+    std::chrono::high_resolution_clock::time_point lastMeasuring;
+    lastMeasuring = std::chrono::high_resolution_clock::now();
+    const auto n = 6;
+    int deliveredData[n];
     while (true) {
-        static const int n = 6;
-        static int deliveredData[n];
-//        lastMeasuring = newMeasuring;
-//        newMeasuring = std::chrono::system_clock::now();
         for (int i = 0; i < n; i++) {
             deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
         }
-//        long timeSpend = std::chrono::duration_cast<std::chrono::microseconds>(newMeasuring - lastMeasuring).count();
+        auto timeSpend = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - lastMeasuring);
+        if (timeSpend > 1s) {
+            lastMeasuring = std::chrono::system_clock::now();
+            for (auto d : deliveredData) { add::log << d << "\t"; }
+            add::log << std::endl;
+        }
         add::dataConversion.lock();
         for (int i = 0; i < 3; i++) {
-            static int j = i << 1;
+            auto j = i << 1;
             if (deliveredData[j] < 50) { continue; }
             // If the highest bit is high, the sign is negative.
             int sign = ((deliveredData[j + 1] & 0x80) == 0) ? 1 : -1;
-//            if (sign == -1) { std::cout << "\n NEGATIVE\r"; }
-            // Shift the high bits and remove the sign value.
-            // + FS * 0.001 * microsecond spend
-            // FS = 250  dps     8.75 mdps/digit
-            // FS = 500  dps     17.50
-            // FS = 2000 dps     70
-            static int data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff);
+            /**
+             * Shift the high bits and remove the sign value.
+             + FS * 0.001 * microsecond spend
+             + FS = 250  dps     8.75 mdps/digit
+             + FS = 500  dps     17.50
+             + FS = 2000 dps     70
+             */
+            auto data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff);
             outData[i] += data * 0.07f * sign;
         }
         add::dataConversion.unlock();
         while ((wiringPiI2CReadReg8(fd, 0x27) & 0x8) != 0x8) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(add::DELAY));
+            std::this_thread::sleep_for(add::DELAY);
         }
     }
 }
@@ -110,7 +115,7 @@ int main(int argc, char *argv[]) {
         }
         add::dataConversion.unlock();
         std::cout << std::endl;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(1s);
     }
 //    return 0;
 }
