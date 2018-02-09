@@ -14,7 +14,7 @@ namespace add {
     std::ofstream log("log.txt", std::ofstream::trunc);
     std::mutex dataConversion;
 
-    const auto DELAY = 20ms;
+    const auto DELAY = 10ms;
 }
 
 enum reg {
@@ -26,20 +26,19 @@ enum reg {
 };
 
 void readData(int &fd, float *outData) {
-    std::chrono::high_resolution_clock::time_point lastMeasuring;
-    lastMeasuring = std::chrono::high_resolution_clock::now();
+//    auto lastMeasuring = std::chrono::high_resolution_clock::now();
     const auto n = 6;
     int deliveredData[n];
     while (true) {
         for (int i = 0; i < n; i++) {
             deliveredData[i] = wiringPiI2CReadReg8(fd, 0x28 + i);
         }
-        auto timeSpend = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - lastMeasuring);
-        if (timeSpend > 1s) {
-            lastMeasuring = std::chrono::system_clock::now();
-            for (auto d : deliveredData) { add::log << d << "\t"; }
-            add::log << std::endl;
-        }
+//        auto timeSpend = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - lastMeasuring);
+//        if (timeSpend > 1s) {
+//            lastMeasuring = std::chrono::system_clock::now();
+//            for (auto d : deliveredData) { add::log << d << "\t"; }
+//            add::log << std::endl;
+//        }
         add::dataConversion.lock();
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
@@ -115,7 +114,7 @@ int main(int argc, char *argv[]) {
         }
         add::dataConversion.unlock();
         std::cout << std::endl;
-        std::this_thread::sleep_for(1s);
+        std::this_thread::sleep_for(100ms);
     }
 //    return 0;
 }
