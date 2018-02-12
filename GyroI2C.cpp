@@ -66,7 +66,7 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
     while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start) <
            milliseconds) {
         for (int i = 0; i < n; i++) {
-            dData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
+            dData[i] = wiringPiI2CReadReg8(gyro, (int)reg::OUT_X_L + i);
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;

@@ -37,7 +37,8 @@ private:
         GYRO_NAME = 0xd4,
         CTRL_REG1 = 0x20,
         CTRL_REG4 = 0x23,
-        NORMAL_MODE = 0x0f
+        NORMAL_MODE = 0x0f,
+        OUT_X_L = 0x28
     };
     std::thread *reading;
     std::mutex affordable;
