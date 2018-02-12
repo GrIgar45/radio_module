@@ -56,6 +56,9 @@ void GyroI2C::calibrate() {
 }
 
 void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
+    for (auto noise : noiseData) {
+        noise = .0;
+    }
     const auto n = 6;
     int dData[n];
     auto start = std::chrono::steady_clock::now();
@@ -77,6 +80,7 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
 void GyroI2C::stop() {
     run = false;
     reading->join();
+    delete reading;
 }
 
 std::string GyroI2C::toString() {
