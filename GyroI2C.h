@@ -19,17 +19,17 @@ struct GyroI2C {
 
     void calibrate(std::chrono::milliseconds milliseconds);
 
-    void start();
-
     void stop();
 
     std::string toString();
 
-    int getX();
+    double getX();
 
-    int getY();
+    double getY();
 
-    int getZ();
+    double getZ();
+
+    double normalizationAxis(int H, int L);
 
 private:
     enum class reg {
@@ -39,10 +39,10 @@ private:
         CTRL_REG4 = 0x23,
         NORMAL_MODE = 0x0f
     };
-    std::thread reading;
+    std::thread *reading;
     std::mutex affordable;
-    int axisData[3];
-    int noiseData[3] = {0, 0, 0};
+    double axisData[3];
+    double noiseData[6];
     int gyro = -1;
     int calibrated = 0;
     bool run = false;

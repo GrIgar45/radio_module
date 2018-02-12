@@ -11,7 +11,7 @@
 
 using namespace std::chrono_literals;
 
-GyroI2C::GyroI2C(int deviceAddress) : reading {} {
+GyroI2C::GyroI2C(int deviceAddress) {
     wiringPiSetup();
     gyro = wiringPiI2CSetup(deviceAddress);
     if (gyro == -1) {
@@ -56,32 +56,27 @@ void GyroI2C::calibrate() {
 }
 
 void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
-    start();
+    const auto n = 6;
+    int dData[n];
     auto start = std::chrono::steady_clock::now();
     while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start) <
            milliseconds) {
+        for (int i = 0; i < n; i++) {
+            dData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
+        }
         for (int i = 0; i < 3; i++) {
-            noiseData[i] = (noiseData[i] < axisData[i]) ? axisData[i] : noiseData[i]; // Ух бля. :С
+            auto j = i << 1;
+            auto d = normalizationAxis(dData[j + 1], dData[j]);
+            noiseData[i] = (d > noiseData[i]) ? d : noiseData[i];
         }
     }
     calibrated = 1;
-    stop();
-}
-
-void GyroI2C::start() {
-    if (run) {
-        throw std::runtime_error("Already running");
-    }
-    run = true;
-    reading = std::thread(&GyroI2C::readData, this);
+    reading = new std::thread(&GyroI2C::readData, this);
 }
 
 void GyroI2C::stop() {
-    if (!run) {
-        throw std::runtime_error("Isn't running");
-    }
     run = false;
-    reading.join();
+    reading->join();
 }
 
 std::string GyroI2C::toString() {
@@ -92,15 +87,15 @@ std::string GyroI2C::toString() {
     return s.str();
 }
 
-int inline GyroI2C::getX() {
+double inline GyroI2C::getX() {
     return axisData[0];
 }
 
-int inline GyroI2C::getY() {
+double inline GyroI2C::getY() {
     return axisData[1];
 }
 
-int inline GyroI2C::getZ() {
+double inline GyroI2C::getZ() {
     return axisData[2];
 }
 
@@ -114,20 +109,26 @@ void GyroI2C::readData() {
         affordable.lock();
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
-            int sign = ((deliveredData[j + 1] & 0x80) == 0) ? 1 : -1;
-            /**
-             * Shift the high bits and remove the sign value.
-             + FS * 0.001 * microsecond spend
-             + FS = 250  dps     8.75 mdps/digit
-             + FS = 500  dps     17.50
-             + FS = 2000 dps     70
-             */
-            auto data = ((deliveredData[j + 1] << 8 | deliveredData[j]) & 0x7fff) * 0.07f * sign;
-            axisData[i] += data > noiseData[i] ? data : 0;
+            auto data = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
+            axisData[i] += (data > noiseData[i]) ? data : 0;
         }
         affordable.unlock();
         while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
             std::this_thread::sleep_for(2ms);
         }
     }
+
+}
+
+double GyroI2C::normalizationAxis(int H, int L) {
+    /**
+     * Shift the high bits and remove the sign value.
+     + FS * 0.001 * microsecond spend
+     + FS = 250  dps     8.75 mdps/digit
+     + FS = 500  dps     17.50
+     + FS = 2000 dps     70
+     */
+    auto sign = ((H & 0x80) == 0) ? 1 : -1;
+    return ((H << 8 | L) & 0x7fff) * 0.07 * sign;
+
 }
