@@ -21,6 +21,8 @@ struct GyroI2C {
 
     void start();
 
+    void stop();
+
     std::string toString();
 
     int getX();
@@ -43,6 +45,7 @@ private:
     int noiseData[3] = {0, 0, 0};
     int gyro = -1;
     int calibrated = 0;
+    bool run = false;
 
     void readData();
 

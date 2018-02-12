@@ -56,6 +56,7 @@ void GyroI2C::calibrate() {
 }
 
 void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
+    start();
     auto start = std::chrono::steady_clock::now();
     while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start) <
            milliseconds) {
@@ -64,20 +65,33 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
         }
     }
     calibrated = 1;
+    stop();
 }
 
 void GyroI2C::start() {
     if (!calibrated) {
         throw std::runtime_error("Start without calibrate");
     }
-    this->reading = std::thread(&GyroI2C::readData, this);
+    if (run) {
+        throw std::runtime_error("Already running");
+    }
+    run = true;
+    reading = std::thread(&GyroI2C::readData, this);
+}
+
+void GyroI2C::stop() {
+    if (!run) {
+        throw std::runtime_error("Isn't running");
+    }
+    run = false;
+    reading.join();
 }
 
 std::string GyroI2C::toString() {
     std::stringstream s;
     s << "X: " << getX();
-    s << "Y: " << getY();
-    s << "Z: " << getZ();
+    s << "\tY: " << getY();
+    s << "\tZ: " << getZ();
     return s.str();
 }
 
@@ -96,7 +110,7 @@ int inline GyroI2C::getZ() {
 void GyroI2C::readData() {
     const auto n = 6;
     int deliveredData[n];
-    while (true) {
+    while (run) {
         for (int i = 0; i < n; i++) {
             deliveredData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
         }
@@ -119,5 +133,4 @@ void GyroI2C::readData() {
             std::this_thread::sleep_for(2ms);
         }
     }
-
 }
