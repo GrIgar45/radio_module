@@ -69,9 +69,6 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
 }
 
 void GyroI2C::start() {
-    if (!calibrated) {
-        throw std::runtime_error("Start without calibrate");
-    }
     if (run) {
         throw std::runtime_error("Already running");
     }
