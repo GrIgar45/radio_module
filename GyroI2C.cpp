@@ -11,7 +11,7 @@
 
 using namespace std::chrono_literals;
 
-GyroI2C::GyroI2C(int deviceAddress) {
+GyroI2C::GyroI2C(int deviceAddress) : reading {} {
     wiringPiSetup();
     gyro = wiringPiI2CSetup(deviceAddress);
     if (gyro == -1) {
@@ -70,7 +70,7 @@ void GyroI2C::start() {
     if (!calibrated) {
         throw std::runtime_error("Start without calibrate");
     }
-    this->reading = std::thread(this, readData);
+    this->reading = std::thread(&GyroI2C::readData, this);
 }
 
 std::string GyroI2C::toString() {
