@@ -6,6 +6,7 @@
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
 #include <sstream>
+#include <iomanip>
 #include "GyroI2C.h"
 
 
@@ -85,6 +86,7 @@ void GyroI2C::stop() {
 
 std::string GyroI2C::toString() {
     std::stringstream s;
+    s << std::fixed << std::setprecision(3);
     s << "X: " << getX();
     s << "\tY: " << getY();
     s << "\tZ: " << getZ();
