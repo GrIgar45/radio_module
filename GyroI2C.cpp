@@ -131,7 +131,7 @@ void GyroI2C::readData() {
     while (run) {
         for (int i = 0; i < n; i++) {
             deliveredData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
-            if ((deliveredData[i] == 255 && ((i % 2) == 1))) { deliveredData[i] = 0x80; }
+            if ((deliveredData[i] > 128 && ((i % 2) == 1))) { deliveredData[i] = 0x80; }
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
