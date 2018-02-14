@@ -57,6 +57,7 @@ void GyroI2C::calibrate() {
 }
 
 void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
+    std::this_thread::sleep_for(2s);
     for (auto noise : noiseData) {
         noise = .0;
     }
@@ -64,7 +65,7 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
     int dData[n];
     auto start = std::chrono::steady_clock::now();
     while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start) <
-           milliseconds) {
+            (milliseconds - 2s)) {
         for (int i = 0; i < n; i++) {
             dData[i] = wiringPiI2CReadReg8(gyro, (int)reg::OUT_X_L + i);
         }
@@ -86,22 +87,22 @@ void GyroI2C::stop() {
 
 std::string GyroI2C::toString() {
     std::stringstream s;
-    s << std::fixed << std::setprecision(3);
+//    s << std::fixed << std::setprecision(3);
     s << "X: " << getX();
     s << "\tY: " << getY();
     s << "\tZ: " << getZ();
     return s.str();
 }
 
-double inline GyroI2C::getX() {
+int inline GyroI2C::getX() {
     return axisData[0];
 }
 
-double inline GyroI2C::getY() {
+int inline GyroI2C::getY() {
     return axisData[1];
 }
 
-double inline GyroI2C::getZ() {
+int inline GyroI2C::getZ() {
     return axisData[2];
 }
 
@@ -126,7 +127,7 @@ void GyroI2C::readData() {
 
 }
 
-double GyroI2C::normalizationAxis(int H, int L) {
+float GyroI2C::normalizationAxis(int H, int L) {
     /**
      * Shift the high bits and remove the sign value.
      + FS * 0.001 * microsecond spend
@@ -135,29 +136,6 @@ double GyroI2C::normalizationAxis(int H, int L) {
      + FS = 2000 dps     70
      */
     auto sign = ((H & 0x80) == 0) ? 1 : -1;
-    return ((H << 8 | L) & 0x7fff) * 0.07 * sign;
+    return ((H << 8 | L) & 0x7fff) * 0.07f * sign;
 
-}
-
-void GyroI2C::log(std::chrono::milliseconds milliseconds) {
-    std::this_thread::sleep_for(2s);
-    for (auto noise : noiseData) {
-        noise = .0;
-    }
-    const auto n = 6;
-    int dData[n];
-    auto start = std::chrono::steady_clock::now();
-    while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start) <
-           milliseconds) {
-        for (int i = 0; i < n; i++) {
-            dData[i] = wiringPiI2CReadReg8(gyro, (int)reg::OUT_X_L + i);
-        }
-        for (int i = 0; i < 3; i++) {
-            auto j = i << 1;
-            float d = static_cast<float>(normalizationAxis(dData[j + 1], dData[j]));
-            logFile << d << std::endl;
-        }
-    }
-    calibrated = 1;
-    reading = new std::thread(&GyroI2C::readData, this);
 }
