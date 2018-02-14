@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <cmath>
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
 #include <sstream>
@@ -72,7 +73,7 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
             auto d = normalizationAxis(dData[j + 1], dData[j]);
-            noiseData[i] = (d > noiseData[i]) ? d : noiseData[i];
+            noiseData[i] = (std::abs(d) > noiseData[i]) ? d : noiseData[i];
         }
     }
     calibrated = 1;
@@ -117,7 +118,7 @@ void GyroI2C::readData() {
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
             auto data = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
-            axisData[i] += (data > noiseData[i]) ? data : 0;
+            axisData[i] += (std::abs(data) > noiseData[i]) ? data : 0;
         }
         affordable.unlock();
         while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {

@@ -20,6 +20,6 @@ int main(int argc, char *argv[]) {
     i2c.calibrate(5000ms);
     while (true) {
         std::cout << i2c.toString() << std::endl;
-        std::this_thread::sleep_for(1s);
+        std::this_thread::sleep_for(100ms);
     }
 }
