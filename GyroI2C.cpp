@@ -72,9 +72,10 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
             auto d = std::abs(normalizationAxis(dData[j + 1], dData[j]));
             noiseData[i] = (d > noiseData[i] && d < 100) ? d : noiseData[i];
         }
+        std::this_thread::sleep_for(20ms);
     }
     for (auto noise : noiseData) {
-        noise = noise * 10;
+        noise = noise * 100;
     }
     std::stringstream s;
     s << std::fixed << std::setprecision(3);
