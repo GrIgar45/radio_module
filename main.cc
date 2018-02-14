@@ -19,7 +19,9 @@ int main(int argc, char *argv[]) {
     GyroI2C i2c(reg::GYRO_ADDRESS, 0);
     i2c.calibrate();
     while (true) {
-        std::cout << i2c.toStringLastData() << i2c.toString() << std::endl;
+        std::cout << i2c.toStringLastData()
+                  << std::endl
+                  << i2c.toString() << std::endl;
         std::this_thread::sleep_for(100ms);
     }
 }
