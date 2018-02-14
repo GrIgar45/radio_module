@@ -54,13 +54,13 @@ GyroI2C::GyroI2C(int deviceAddress) : logFile("log.txt") {
 }
 
 void GyroI2C::calibrate() {
-    this->calibrate(1000ms);
+    this->calibrate(5000ms);
 }
 
 void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
     std::this_thread::sleep_for(2s);
     for (auto noise : noiseData) {
-        noise = .0;
+        noise = .0f;
     }
     const auto n = 6;
     int dData[n];
@@ -72,8 +72,8 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
-            auto d = normalizationAxis(dData[j + 1], dData[j]);
-            noiseData[i] = (std::abs(d) > noiseData[i]) ? d : noiseData[i];
+            auto d = std::abs(normalizationAxis(dData[j + 1], dData[j]));
+            noiseData[i] = (d > noiseData[i] && d < 100.f) ? d : noiseData[i];
         }
     }
     std::cout << "Calibration successful. X: " << noiseData[0] << " Y: " << noiseData[1] << " Z: " << noiseData[2]
