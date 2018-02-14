@@ -9,6 +9,7 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
+#include <fstream>
 
 
 struct GyroI2C {
@@ -20,6 +21,8 @@ struct GyroI2C {
     void calibrate(std::chrono::milliseconds milliseconds);
 
     void stop();
+
+    void log(std::chrono::milliseconds milliseconds);
 
     std::string toString();
 
@@ -42,6 +45,7 @@ private:
     };
     std::thread *reading;
     std::mutex affordable;
+    std::ofstream logFile;
     double axisData[3];
     double noiseData[6];
     int gyro = -1;

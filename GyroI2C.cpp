@@ -12,7 +12,7 @@
 
 using namespace std::chrono_literals;
 
-GyroI2C::GyroI2C(int deviceAddress) {
+GyroI2C::GyroI2C(int deviceAddress) : logFile("log.txt") {
     wiringPiSetup();
     gyro = wiringPiI2CSetup(deviceAddress);
     if (gyro == -1) {
@@ -137,4 +137,26 @@ double GyroI2C::normalizationAxis(int H, int L) {
     auto sign = ((H & 0x80) == 0) ? 1 : -1;
     return ((H << 8 | L) & 0x7fff) * 0.07 * sign;
 
+}
+
+void GyroI2C::log(std::chrono::milliseconds milliseconds) {
+    for (auto noise : noiseData) {
+        noise = .0;
+    }
+    const auto n = 6;
+    int dData[n];
+    auto start = std::chrono::steady_clock::now();
+    while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start) <
+           milliseconds) {
+        for (int i = 0; i < n; i++) {
+            dData[i] = wiringPiI2CReadReg8(gyro, (int)reg::OUT_X_L + i);
+        }
+        for (int i = 0; i < 3; i++) {
+            auto j = i << 1;
+            float d = static_cast<float>(normalizationAxis(dData[j + 1], dData[j]));
+            logFile << d << std::endl;
+        }
+    }
+    calibrated = 1;
+    reading = new std::thread(&GyroI2C::readData, this);
 }
