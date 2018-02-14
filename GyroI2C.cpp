@@ -140,6 +140,7 @@ double GyroI2C::normalizationAxis(int H, int L) {
 }
 
 void GyroI2C::log(std::chrono::milliseconds milliseconds) {
+    std::this_thread::sleep_for(2s);
     for (auto noise : noiseData) {
         noise = .0;
     }
