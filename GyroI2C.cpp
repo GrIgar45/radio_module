@@ -2,12 +2,12 @@
 // Created by dev on 2/9/18.
 //
 
-#include <iostream>
 #include <cmath>
-#include <wiringPi.h>
-#include <wiringPiI2C.h>
 #include <sstream>
 #include <iomanip>
+#include <iostream>
+#include <wiringPi.h>
+#include <wiringPiI2C.h>
 #include "GyroI2C.h"
 
 
@@ -74,7 +74,7 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
         }
     }
     for (auto noise : noiseData) {
-        noise = noise * 2;
+        noise = noise * 10;
     }
     std::stringstream s;
     s << std::fixed << std::setprecision(3);
@@ -93,23 +93,39 @@ void GyroI2C::stop() {
 
 std::string GyroI2C::toString() {
     std::stringstream s;
-//    s << std::fixed << std::setprecision(3);
+    s << "Position\n";
     s << "X: " << getX();
     s << "\tY: " << getY();
     s << "\tZ: " << getZ();
     return s.str();
 }
 
+std::string GyroI2C::toStringLastData() {
+    std::stringstream s;
+    s << "Raw data\n";
+    s << std::fixed << std::setprecision(3);
+    s << "X: " << lastData[0];
+    s << "\tY: " << lastData[1];
+    s << "\tZ: " << lastData[2];
+    return s.str();
+}
+
 int inline GyroI2C::getX() {
+    affordable.lock();
     return axisData[0];
+    affordable.unlock();
 }
 
 int inline GyroI2C::getY() {
+    affordable.lock();
     return axisData[1];
+    affordable.unlock();
 }
 
 int inline GyroI2C::getZ() {
+    affordable.lock();
     return axisData[2];
+    affordable.unlock();
 }
 
 void GyroI2C::readData() {
@@ -122,15 +138,14 @@ void GyroI2C::readData() {
         affordable.lock();
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
-            auto data = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
-            axisData[i] += (std::abs(data) > noiseData[i]) ? data : 0;
+            lastData[i] = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
+            axisData[i] += (std::abs(lastData[i]) > noiseData[i]) ? static_cast<int>(lastData[i]) : 0;
         }
         affordable.unlock();
         while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
             std::this_thread::sleep_for(2ms);
         }
     }
-
 }
 
 float GyroI2C::normalizationAxis(int H, int L) {
@@ -143,5 +158,4 @@ float GyroI2C::normalizationAxis(int H, int L) {
      */
     auto sign = ((H & 0x80) == 0) ? 1 : -1;
     return ((H << 8 | L) & 0x7fff) * 0.07f * sign;
-
 }
