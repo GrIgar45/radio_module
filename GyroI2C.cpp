@@ -77,10 +77,10 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
         std::this_thread::sleep_for(20ms);
     }
     for (int i = 0; i < 3; i++) {
-        noiseData[i] = noiseData[i] * 10;
+        noiseData[i] = noiseData[i] * 5;
     }
     std::stringstream s;
-//    s << std::fixed << std::setprecision(3);
+    s << std::fixed << std::setprecision(3);
     s << "Calibration successful. X: " << noiseData[0] << " Y: " << noiseData[1] << " Z: " << noiseData[2] << std::endl;
     std::cout << s.str();
     calibrated = 1;
@@ -131,17 +131,19 @@ void GyroI2C::readData() {
     while (run) {
         for (int i = 0; i < n; i++) {
             deliveredData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
-//            if ((deliveredData[i] > 128 && ((i % 2) == 1))) { deliveredData[i] = 0x80; }
+            if ((deliveredData[i] > 128 && ((i % 2) == 1))) {
+                deliveredData[i] = 0x80;
+            }
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
             auto d = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
             axisData[i] += (std::abs(d) > noiseData[i]) ? static_cast<int>(d) : 0;
         }
-//        while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
-//            std::this_thread::sleep_for(2ms);
-//        }
-        std::this_thread::sleep_for(20ms);
+        while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
+            std::this_thread::sleep_for(1ms);
+        }
+//        std::this_thread::sleep_for(20ms);
     }
 }
 
