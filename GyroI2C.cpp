@@ -13,7 +13,7 @@
 
 using namespace std::chrono_literals;
 
-GyroI2C::GyroI2C(int deviceAddress) : logFile("log.txt") {
+GyroI2C::GyroI2C(int deviceAddress, int axisData) : axisData {0, 0, 0} {
     wiringPiSetup();
     gyro = wiringPiI2CSetup(deviceAddress);
     if (gyro == -1) {

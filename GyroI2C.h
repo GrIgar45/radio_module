@@ -14,7 +14,7 @@
 
 struct GyroI2C {
 
-    GyroI2C(int deviceAddress);
+    GyroI2C(int deviceAddress, int axisData);
 
     void calibrate();
 
@@ -43,7 +43,6 @@ private:
     };
     std::thread *reading;
     std::mutex affordable;
-    std::ofstream logFile;
     int axisData[3];
     float noiseData[6];
     int gyro = -1;

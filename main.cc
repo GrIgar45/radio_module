@@ -16,7 +16,7 @@ enum reg {
 };
 
 int main(int argc, char *argv[]) {
-    GyroI2C i2c(reg::GYRO_ADDRESS);
+    GyroI2C i2c(reg::GYRO_ADDRESS, 0);
     i2c.calibrate();
     while (true) {
         std::cout << i2c.toString() << std::endl;
