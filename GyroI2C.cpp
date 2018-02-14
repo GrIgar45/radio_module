@@ -97,20 +97,20 @@ void GyroI2C::stop() {
 std::string GyroI2C::toString() {
     std::stringstream s;
     s << "Position\n";
-    s << std::setfill(' ') << std::setw(7);
-    s << "X: " << getX();
-    s << "Y: " << getY();
-    s << "Z: " << getZ();
+    s << std::setfill(' ');
+    s << "X: " << std::setw(7) << getX();
+    s << "\tY: " << std::setw(7) << getY();
+    s << "\tZ: " << std::setw(7) << getZ();
     return s.str();
 }
 
 std::string GyroI2C::toStringLastData() {
     std::stringstream s;
-    s << std::setfill(' ') << std::setw(3);
     s << "Last raw\n";
-    s << "X: " << lastData[0] << ", " << lastData[1];
-    s << "Y: " << lastData[2] << ", " << lastData[3];
-    s << "Z: " << lastData[4] << ", " << lastData[5];
+    s << std::setfill(' ');
+    s << "X: " << std::setw(3) << lastData[0] << ", " << std::setw(3) << lastData[1];
+    s << "\tY: " << std::setw(3) << lastData[2] << ", " << std::setw(3) << lastData[3];
+    s << "\tZ: " << std::setw(3) << lastData[4] << ", " << std::setw(3) << lastData[5];
     return s.str();
 }
 
