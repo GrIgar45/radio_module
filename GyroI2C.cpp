@@ -13,7 +13,9 @@
 
 using namespace std::chrono_literals;
 
-GyroI2C::GyroI2C(int deviceAddress, int axisData) : axisData {0, 0, 0}, noiseData {0, 0, 0}, lastData{0, 0, 0, 0, 0, 0} {
+GyroI2C::GyroI2C(int deviceAddress, int axisData)
+        :
+        axisData {0, 0, 0}, noiseData {0, 0, 0}, lastData {0, 0, 0, 0, 0, 0} {
     wiringPiSetup();
     gyro = wiringPiI2CSetup(deviceAddress);
     if (gyro == -1) {
@@ -127,10 +129,9 @@ void GyroI2C::readData() {
     const auto n = 6;
     int *deliveredData = lastData;
     while (run) {
-        wiringPiI2CReadReg8(gyro, 0x28 | 1 << 7);
         for (int i = 0; i < n; i++) {
-//            deliveredData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
-            deliveredData[i] = wiringPiI2CRead(gyro);
+            deliveredData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
+            if ((deliveredData[i] == 255 && ((i % 2) == 1))) { deliveredData[i] = 0x80; }
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
