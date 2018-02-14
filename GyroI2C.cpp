@@ -120,6 +120,7 @@ void GyroI2C::readData() {
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
             auto data = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
+            std::cout << data << std::endl;
             axisData[i] += (std::abs(data) > noiseData[i]) ? data : 0;
         }
         affordable.unlock();
