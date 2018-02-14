@@ -146,7 +146,7 @@ void GyroI2C::readData() {
 
 float GyroI2C::normalizationAxis(int H, int L) {
     auto sign = ((H & 0x80) == 0) ? 1 : -1;
-    if (H > 128 ) {
+    if (sign == -1) {
         H = 0xff - H;
     }
     /**
