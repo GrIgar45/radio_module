@@ -127,8 +127,10 @@ void GyroI2C::readData() {
     const auto n = 6;
     int *deliveredData = lastData;
     while (run) {
+        wiringPiI2CReadReg8(gyro, 0x28 | 1 << 7);
         for (int i = 0; i < n; i++) {
-            deliveredData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
+//            deliveredData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
+            deliveredData[i] = wiringPiI2CRead(gyro);
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
