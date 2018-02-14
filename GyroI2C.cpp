@@ -102,8 +102,8 @@ std::string GyroI2C::toString() {
 
 std::string GyroI2C::toStringLastData() {
     std::stringstream s;
-    s << "Raw data\n";
     s << std::fixed << std::setprecision(3);
+    s << "Raw data\n";
     s << "X: " << lastData[0];
     s << "\tY: " << lastData[1];
     s << "\tZ: " << lastData[2];
