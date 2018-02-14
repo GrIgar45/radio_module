@@ -79,7 +79,7 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
         }
     }
     for (int i = 0; i < 3; i++) {
-        noiseData[i] = noiseData[i] * 3;
+        noiseData[i] = noiseData[i] * 2;
     }
     std::stringstream s;
     s << std::fixed << std::setprecision(3);
@@ -159,5 +159,5 @@ float GyroI2C::normalizationAxis(int H, int L) {
      + FS = 500  dps     17.50
      + FS = 2000 dps     70
      */
-    return (H << 8 | L) * 0.00070f * sign;
+    return (H << 8 | L) * 0.70f * sign;
 }
