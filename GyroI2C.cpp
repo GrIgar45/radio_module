@@ -13,7 +13,7 @@
 
 using namespace std::chrono_literals;
 
-GyroI2C::GyroI2C(int deviceAddress, int axisData) : axisData {0, 0, 0}, noiseData {0, 0, 0} {
+GyroI2C::GyroI2C(int deviceAddress, int axisData) : axisData {0, 0, 0}, noiseData {0, 0, 0}, lastData{0, 0, 0, 0, 0, 0} {
     wiringPiSetup();
     gyro = wiringPiI2CSetup(deviceAddress);
     if (gyro == -1) {
@@ -105,9 +105,9 @@ std::string GyroI2C::toStringLastData() {
     std::stringstream s;
     s << std::fixed << std::setprecision(3);
     s << "Last raw\n";
-    s << "X: " << lastData[0];
-    s << "\tY: " << lastData[1];
-    s << "\tZ: " << lastData[2];
+    s << "X: " << lastData[0] << ", " << lastData[1];
+    s << "\tY: " << lastData[2] << ", " << lastData[3];
+    s << "\tZ: " << lastData[4] << ", " << lastData[5];
     return s.str();
 }
 
@@ -125,15 +125,15 @@ int inline GyroI2C::getZ() {
 
 void GyroI2C::readData() {
     const auto n = 6;
-    int deliveredData[n];
+    int *deliveredData = lastData;
     while (run) {
         for (int i = 0; i < n; i++) {
             deliveredData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
-            lastData[i] = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
-            axisData[i] += (std::abs(lastData[i]) > noiseData[i]) ? static_cast<int>(lastData[i]) : 0;
+            auto d = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
+            axisData[i] += (std::abs(d) > noiseData[i]) ? static_cast<int>(d) : 0;
         }
 //        while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
 //            std::this_thread::sleep_for(2ms);

@@ -47,7 +47,7 @@ private:
     std::mutex affordable;
     int axisData[3];
     float noiseData[3];
-    float lastData[3];
+    int lastData[6];
     int gyro = -1;
     int calibrated = 0;
     bool run = false;
