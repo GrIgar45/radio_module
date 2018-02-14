@@ -134,9 +134,10 @@ void GyroI2C::readData() {
             lastData[i] = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
             axisData[i] += (std::abs(lastData[i]) > noiseData[i]) ? static_cast<int>(lastData[i]) : 0;
         }
-        while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
-            std::this_thread::sleep_for(2ms);
-        }
+//        while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
+//            std::this_thread::sleep_for(2ms);
+//        }
+        std::this_thread::sleep_for(20ms);
     }
 }
 
