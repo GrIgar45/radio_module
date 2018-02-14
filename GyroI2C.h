@@ -44,7 +44,7 @@ private:
     std::thread *reading;
     std::mutex affordable;
     int axisData[3];
-    float noiseData[6];
+    int noiseData[3];
     int gyro = -1;
     int calibrated = 0;
     bool run = false;
