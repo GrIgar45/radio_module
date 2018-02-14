@@ -98,7 +98,7 @@ std::string GyroI2C::toString() {
     std::stringstream s;
     s << "Position\n";
     s << std::setfill(' ');
-    s << "X: " << std::setw(7) << getX();
+    s << "X: "   << std::setw(7) << getX();
     s << "\tY: " << std::setw(7) << getY();
     s << "\tZ: " << std::setw(7) << getZ();
     return s.str();
@@ -108,7 +108,7 @@ std::string GyroI2C::toStringLastData() {
     std::stringstream s;
     s << "Last raw\n";
     s << std::setfill(' ');
-    s << "X: " << std::setw(3) << lastData[0] << ", " << std::setw(3) << lastData[1];
+    s << "X: "   << std::setw(3) << lastData[0] << ", " << std::setw(3) << lastData[1];
     s << "\tY: " << std::setw(3) << lastData[2] << ", " << std::setw(3) << lastData[3];
     s << "\tZ: " << std::setw(3) << lastData[4] << ", " << std::setw(3) << lastData[5];
     return s.str();
@@ -148,7 +148,7 @@ void GyroI2C::readData() {
 float GyroI2C::normalizationAxis(int H, int L) {
     auto sign = ((H & 0x80) == 0) ? 1 : -1;
     if (sign == -1) {
-        H = 0xff - H;
+        H = 0x7f - (H & 0x7f);
     }
     /**
      * Shift the high bits and remove the sign value.
@@ -157,5 +157,5 @@ float GyroI2C::normalizationAxis(int H, int L) {
      + FS = 500  dps     17.50
      + FS = 2000 dps     70
      */
-    return ((H << 8 | L) & 0x7fff) * 0.07f * sign;
+    return (H << 8 | L) * 0.07f * sign;
 }
