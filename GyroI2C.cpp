@@ -69,15 +69,17 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
-            auto d = static_cast<int>(std::abs(normalizationAxis(dData[j + 1], dData[j])));
+            auto d = std::abs(normalizationAxis(dData[j + 1], dData[j]));
             noiseData[i] = (d > noiseData[i] && d < 100) ? d : noiseData[i];
         }
     }
     for (auto noise : noiseData) {
-        noise <<= 1;
+        noise = noise * 2;
     }
-    std::cout << "Calibration successful. X: " << noiseData[0] << " Y: " << noiseData[1] << " Z: " << noiseData[2]
-              << std::endl;
+    std::stringstream s;
+    s << std::fixed << std::setprecision(3);
+    s << "Calibration successful. X: " << noiseData[0] << " Y: " << noiseData[1] << " Z: " << noiseData[2] << std::endl;
+    std::cout << s.str();
     calibrated = 1;
     run = true;
     reading = new std::thread(&GyroI2C::readData, this);
