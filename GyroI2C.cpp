@@ -74,7 +74,9 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
             auto d = std::abs(normalizationAxis(dData[j + 1], dData[j]));
             noiseData[i] = (d > noiseData[i] && d < 100) ? d : noiseData[i];
         }
-        std::this_thread::sleep_for(20ms);
+        while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
+            std::this_thread::sleep_for(1ms);
+        }
     }
     for (int i = 0; i < 3; i++) {
         noiseData[i] = noiseData[i] * 3;
@@ -139,7 +141,7 @@ void GyroI2C::readData() {
             axisData[i] += (std::abs(d) > noiseData[i]) ? static_cast<int>(d) : 0;
         }
         while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
-            std::this_thread::sleep_for(5ms);
+            std::this_thread::sleep_for(1ms);
         }
 //        std::this_thread::sleep_for(20ms);
     }
@@ -157,5 +159,5 @@ float GyroI2C::normalizationAxis(int H, int L) {
      + FS = 500  dps     17.50
      + FS = 2000 dps     70
      */
-    return (H << 8 | L) * 0.07f * sign;
+    return (H << 8 | L) * 0.0070f * sign;
 }
