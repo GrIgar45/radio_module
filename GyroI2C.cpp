@@ -107,6 +107,7 @@ int inline GyroI2C::getZ() {
 }
 
 void GyroI2C::readData() {
+    std::cout << "Reading started" << std::endl;
     const auto n = 6;
     int deliveredData[n];
     while (run) {
