@@ -66,7 +66,7 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
     int dData[n];
     auto start = std::chrono::steady_clock::now();
     while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start) <
-            (milliseconds - 2s)) {
+           (milliseconds - 2s)) {
         for (int i = 0; i < n; i++) {
             dData[i] = wiringPiI2CReadReg8(gyro, (int)reg::OUT_X_L + i);
         }
@@ -76,6 +76,8 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
             noiseData[i] = (std::abs(d) > noiseData[i]) ? d : noiseData[i];
         }
     }
+    std::cout << "Calibration successful. X: " << noiseData[0] << " Y: " << noiseData[1] << " Z: " << noiseData[2]
+              << std::endl;
     calibrated = 1;
     reading = new std::thread(&GyroI2C::readData, this);
 }
