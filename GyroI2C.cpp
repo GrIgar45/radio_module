@@ -102,7 +102,8 @@ std::string GyroI2C::toString() {
 
 std::string GyroI2C::toStringLastData() {
     std::stringstream s;
-//    s << std::fixed << std::setprecision(3);
+    s << std::fixed << std::setprecision(3);
+    s << "Last raw\n";
     s << "X: " << lastData[0];
     s << "\tY: " << lastData[1];
     s << "\tZ: " << lastData[2];
@@ -110,21 +111,15 @@ std::string GyroI2C::toStringLastData() {
 }
 
 int inline GyroI2C::getX() {
-    affordable.lock();
     return axisData[0];
-    affordable.unlock();
 }
 
 int inline GyroI2C::getY() {
-    affordable.lock();
     return axisData[1];
-    affordable.unlock();
 }
 
 int inline GyroI2C::getZ() {
-    affordable.lock();
     return axisData[2];
-    affordable.unlock();
 }
 
 void GyroI2C::readData() {
@@ -134,13 +129,11 @@ void GyroI2C::readData() {
         for (int i = 0; i < n; i++) {
             deliveredData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
         }
-        affordable.lock();
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
             lastData[i] = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
             axisData[i] += (std::abs(lastData[i]) > noiseData[i]) ? static_cast<int>(lastData[i]) : 0;
         }
-        affordable.unlock();
         while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
             std::this_thread::sleep_for(2ms);
         }
