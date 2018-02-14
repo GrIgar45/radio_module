@@ -76,6 +76,7 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
     std::cout << "Calibration successful. X: " << noiseData[0] << " Y: " << noiseData[1] << " Z: " << noiseData[2]
               << std::endl;
     calibrated = 1;
+    run = true;
     reading = new std::thread(&GyroI2C::readData, this);
 }
 
@@ -107,7 +108,6 @@ int inline GyroI2C::getZ() {
 }
 
 void GyroI2C::readData() {
-    std::cout << "Reading started" << std::endl;
     const auto n = 6;
     int deliveredData[n];
     while (run) {
