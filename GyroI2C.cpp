@@ -131,9 +131,6 @@ void GyroI2C::readData() {
     while (run) {
         for (int i = 0; i < n; i++) {
             deliveredData[i] = wiringPiI2CReadReg8(gyro, 0x28 + i);
-            if ((deliveredData[i] > 128 && ((i % 2) == 1))) {
-                deliveredData[i] = 0x80;
-            }
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
@@ -148,6 +145,10 @@ void GyroI2C::readData() {
 }
 
 float GyroI2C::normalizationAxis(int H, int L) {
+    auto sign = ((H & 0x80) == 0) ? 1 : -1;
+    if (H > 128 ) {
+        H = 0xff - H;
+    }
     /**
      * Shift the high bits and remove the sign value.
      + FS * 0.001 * microsecond spend
@@ -155,6 +156,5 @@ float GyroI2C::normalizationAxis(int H, int L) {
      + FS = 500  dps     17.50
      + FS = 2000 dps     70
      */
-    auto sign = ((H & 0x80) == 0) ? 1 : -1;
     return ((H << 8 | L) & 0x7fff) * 0.07f * sign;
 }
