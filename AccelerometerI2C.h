@@ -34,6 +34,7 @@ struct AccelerometerI2C {
 
 private:
     enum class reg {
+        WHAT_IS_MY_ADDRESS = 0x0d,
         WHO_AM_I = 0x0f,
         GYRO_NAME = 0xd4,
         CTRL_REG1 = 0x20,

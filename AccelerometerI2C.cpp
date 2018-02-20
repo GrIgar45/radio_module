@@ -15,7 +15,7 @@ AccelerometerI2C::AccelerometerI2C(int deviceAddress) : axisData{0, 0, 0}, lastD
         throw std::runtime_error("Can't setup the I2C device.");
     }
     for (int i = 0; i < 10; i++) {
-        int data = wiringPiI2CReadReg8(gyro, (int)reg::WHO_AM_I);
-        std::cout << data << std::endl;
+        int data = wiringPiI2CReadReg8(gyro, (int)reg::WHAT_IS_MY_ADDRESS);
+        std::cout << std::hex << data << std::endl;
     }
 }
