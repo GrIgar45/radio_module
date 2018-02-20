@@ -1,18 +1,18 @@
 //
-// Created by dev on 2/9/18.
+// Created by dev on 2/19/18.
 //
 
-#ifndef I2C_GYROI2C_H
-#define I2C_GYROI2C_H
+#ifndef I2C_ACCELEROMETER_H
+#define I2C_ACCELEROMETER_H
 
 
 #include <chrono>
+#include <ostream>
 #include <thread>
 
 
-struct GyroI2C {
-
-    GyroI2C(int deviceAddress);
+struct AccelerometerI2C {
+    AccelerometerI2C(int deviceAddress);
 
     void calibrate();
 
@@ -20,15 +20,15 @@ struct GyroI2C {
 
     void stop();
 
-    friend std::ostream &operator<<(std::ostream &os, const GyroI2C &data);
+    friend std::ostream &operator<<(std::ostream &os, const AccelerometerI2C &data);
 
     std::string toStringLastData();
 
-    int getX()const;
+    int getX() const;
 
-    int getY()const;
+    int getY() const;
 
-    int getZ()const;
+    int getZ() const;
 
     float normalizationAxis(int H, int L);
 
@@ -50,8 +50,7 @@ private:
     bool run = false;
 
     void readData();
-
 };
 
 
-#endif //I2C_GYROI2C_H
+#endif //I2C_ACCELEROMETER_H

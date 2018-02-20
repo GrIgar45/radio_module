@@ -13,7 +13,7 @@
 
 using namespace std::chrono_literals;
 
-GyroI2C::GyroI2C(int deviceAddress, int axisData)
+GyroI2C::GyroI2C(int deviceAddress)
         :
         axisData {0, 0, 0}, noiseData {0, 0, 0}, lastData {0, 0, 0, 0, 0, 0} {
     wiringPiSetup();
@@ -96,35 +96,34 @@ void GyroI2C::stop() {
     delete reading;
 }
 
-std::string GyroI2C::toString() {
-    std::stringstream s;
+std::ostream &operator<<(std::ostream &s, const GyroI2C &data) {
     s << "Position\n";
     s << std::setfill(' ');
-    s << "X: "   << std::setw(7) << getX();
-    s << "\tY: " << std::setw(7) << getY();
-    s << "\tZ: " << std::setw(7) << getZ();
-    return s.str();
+    s << "X: " << std::setw(7) << data.getX();
+    s << "\tY: " << std::setw(7) << data.getY();
+    s << "\tZ: " << std::setw(7) << data.getZ();
+    return s;
 }
 
 std::string GyroI2C::toStringLastData() {
     std::stringstream s;
     s << "Last raw\n";
     s << std::setfill(' ');
-    s << "X: "   << std::setw(3) << lastData[0] << ", " << std::setw(3) << lastData[1];
+    s << "X: " << std::setw(3) << lastData[0] << ", " << std::setw(3) << lastData[1];
     s << "\tY: " << std::setw(3) << lastData[2] << ", " << std::setw(3) << lastData[3];
     s << "\tZ: " << std::setw(3) << lastData[4] << ", " << std::setw(3) << lastData[5];
     return s.str();
 }
 
-int inline GyroI2C::getX() {
+int GyroI2C::getX() const {
     return axisData[0];
 }
 
-int inline GyroI2C::getY() {
+int GyroI2C::getY() const {
     return axisData[1];
 }
 
-int inline GyroI2C::getZ() {
+int GyroI2C::getZ() const {
     return axisData[2];
 }
 
@@ -143,11 +142,11 @@ void GyroI2C::readData() {
         while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
             std::this_thread::sleep_for(1ms);
         }
-//        std::this_thread::sleep_for(20ms);
     }
 }
 
 float GyroI2C::normalizationAxis(int H, int L) {
+    // is it H less than 128 ? the data is positive : negative
     auto sign = (H < 0x7f) ? 1 : -1;
     if (sign == -1) {
         H = 0xff - H;
