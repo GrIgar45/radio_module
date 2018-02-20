@@ -158,5 +158,5 @@ float GyroI2C::normalizationAxis(int H, int L) {
      + FS = 500  dps     17.50
      + FS = 2000 dps     70
      */
-    return (H << 8 | L) * 0.0070f * sign;
+    return (H << 8 | L) * 0.00070f * sign;
 }
