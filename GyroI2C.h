@@ -24,11 +24,11 @@ struct GyroI2C {
 
     std::string toStringLastData();
 
-    int getX()const;
+    float getX()const;
 
-    int getY()const;
+    float getY()const;
 
-    int getZ()const;
+    float getZ()const;
 
     float normalizationAxis(int H, int L);
 
@@ -44,7 +44,7 @@ private:
         DATA_READY = 0x08
     };
     std::thread *reading;
-    int axisData[3];
+    float axisData[3];
     float noiseData[3];
     int lastData[6];
     int gyro = -1;

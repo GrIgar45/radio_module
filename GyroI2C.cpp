@@ -115,15 +115,15 @@ std::string GyroI2C::toStringLastData() {
     return s.str();
 }
 
-int GyroI2C::getX() const {
+float GyroI2C::getX() const {
     return axisData[0];
 }
 
-int GyroI2C::getY() const {
+float GyroI2C::getY() const {
     return axisData[1];
 }
 
-int GyroI2C::getZ() const {
+float GyroI2C::getZ() const {
     return axisData[2];
 }
 
@@ -137,7 +137,7 @@ void GyroI2C::readData() {
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
             auto d = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
-            axisData[i] += (std::abs(d) > noiseData[i]) ? static_cast<int>(d) : 0;
+            axisData[i] += (std::abs(d) > noiseData[i]) ? d : .0f;
         }
         while ((wiringPiI2CReadReg8(gyro, reg::IS_NEW_DATA_READY) & reg::DATA_READY) != reg::DATA_READY) {
             std::this_thread::sleep_for(1ms);
