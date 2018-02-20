@@ -33,7 +33,7 @@ struct AccelerometerI2C {
     float normalizationAxis(int H, int L);
 
 private:
-    enum class reg {
+    enum reg {
         WHAT_IS_MY_ADDRESS = 0x0d,
         WHO_AM_I = 0x0f,
         GYRO_NAME = 0xd4,

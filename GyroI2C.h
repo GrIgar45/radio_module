@@ -33,13 +33,15 @@ struct GyroI2C {
     float normalizationAxis(int H, int L);
 
 private:
-    enum class reg {
+    enum reg {
         WHO_AM_I = 0x0f,
         GYRO_NAME = 0xd4,
         CTRL_REG1 = 0x20,
         CTRL_REG4 = 0x23,
         NORMAL_MODE = 0x0f,
-        OUT_X_L = 0x28
+        OUT_X_L = 0x28,
+        IS_NEW_DATA_READY = 0x27,
+        DATA_READY = 0x08
     };
     std::thread *reading;
     int axisData[3];

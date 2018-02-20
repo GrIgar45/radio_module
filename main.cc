@@ -17,12 +17,12 @@ enum reg {
 };
 
 int main(int argc, char *argv[]) {
-//    GyroI2C i2c(reg::GYRO_ADDRESS);
-//    i2c.calibrate();
-//    while (true) {
-//        std::cout << i2c.toStringLastData() << std::endl;
-//        std::cout << i2c << std::endl;
-//        std::this_thread::sleep_for(100ms);
-//    }
+    GyroI2C i2c(reg::GYRO_ADDRESS);
+    i2c.calibrate();
+    while (true) {
+        std::cout << i2c.toStringLastData() << std::endl;
+        std::cout << i2c << std::endl;
+        std::this_thread::sleep_for(100ms);
+    }
     AccelerometerI2C i2C(reg::ACCELER_ADDRESS);
 }
