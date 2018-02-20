@@ -74,7 +74,7 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
             auto d = std::abs(normalizationAxis(dData[j + 1], dData[j]));
             noiseData[i] = (d > noiseData[i] && d < 100) ? d : noiseData[i];
         }
-        while ((wiringPiI2CReadReg8(gyro, 0x27) & 0x8) != 0x8) {
+        while ((wiringPiI2CReadReg8(gyro, reg::IS_NEW_DATA_READY) & reg::DATA_READY) != reg::DATA_READY) {
             std::this_thread::sleep_for(1ms);
         }
     }
