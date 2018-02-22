@@ -22,13 +22,17 @@ struct GyroI2C {
 
     friend std::ostream &operator<<(std::ostream &os, const GyroI2C &data);
 
+#ifndef NDEBUG
+
     std::string toStringLastData();
 
-    float getX()const;
+#endif
+    
+    float getX() const;
 
-    float getY()const;
+    float getY() const;
 
-    float getZ()const;
+    float getZ() const;
 
     float normalizationAxis(int H, int L);
 
@@ -44,9 +48,9 @@ private:
         DATA_READY = 0x08
     };
     std::thread *reading;
-    float axisData[3];
-    float noiseData[3];
-    int lastData[6];
+    float axis_data[3];
+    float noise_data[3];
+    int last_data[6];
     int gyro = -1;
     int calibrated = 0;
     bool run = false;

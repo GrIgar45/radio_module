@@ -6,7 +6,7 @@
 #define I2C_AXISDATA_H
 
 
-class AxisData {
+struct AxisData {
 
 };
 

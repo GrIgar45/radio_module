@@ -15,7 +15,7 @@ using namespace std::chrono_literals;
 
 GyroI2C::GyroI2C(int deviceAddress)
         :
-        axisData {0, 0, 0}, noiseData {0, 0, 0}, lastData {0, 0, 0, 0, 0, 0} {
+        axis_data {0, 0, 0}, noise_data {0, 0, 0}, last_data {0, 0, 0, 0, 0, 0} {
     wiringPiSetup();
     gyro = wiringPiI2CSetup(deviceAddress);
     if (gyro == -1) {
@@ -62,28 +62,28 @@ void GyroI2C::calibrate() {
 void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
     std::this_thread::sleep_for(2s);
     const auto n = 6;
-    int dData[n];
+    int tmp_axis_data[n];
     auto start = std::chrono::steady_clock::now();
     while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start) <
            (milliseconds - 2s)) {
         for (int i = 0; i < n; i++) {
-            dData[i] = wiringPiI2CReadReg8(gyro, reg::OUT_X_L + i);
+            tmp_axis_data[i] = wiringPiI2CReadReg8(gyro, reg::OUT_X_L + i);
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
-            auto d = std::abs(normalizationAxis(dData[j + 1], dData[j]));
-            noiseData[i] = (d > noiseData[i] && d < 100) ? d : noiseData[i];
+            auto d = std::abs(normalizationAxis(tmp_axis_data[j + 1], tmp_axis_data[j]));
+            noise_data[i] = (d > noise_data[i] && d < 100) ? d : noise_data[i];
         }
         while ((wiringPiI2CReadReg8(gyro, reg::IS_NEW_DATA_READY) & reg::DATA_READY) != reg::DATA_READY) {
             std::this_thread::sleep_for(1ms);
         }
     }
     for (int i = 0; i < 3; i++) {
-        noiseData[i] = noiseData[i] * 2;
+        noise_data[i] = noise_data[i] * 2;
     }
     std::stringstream s;
     s << std::fixed << std::setprecision(3);
-    s << "Calibration successful. X: " << noiseData[0] << " Y: " << noiseData[1] << " Z: " << noiseData[2] << std::endl;
+    s << "Calibration successful. X: " << noise_data[0] << " Y: " << noise_data[1] << " Z: " << noise_data[2] << std::endl;
     std::cout << s.str();
     calibrated = 1;
     run = true;
@@ -105,39 +105,41 @@ std::ostream &operator<<(std::ostream &s, const GyroI2C &data) {
     return s;
 }
 
+#ifndef NDEBUG
 std::string GyroI2C::toStringLastData() {
     std::stringstream s;
     s << "Last raw\n";
     s << std::setfill(' ');
-    s << "X: " << std::setw(3) << lastData[0] << ", " << std::setw(3) << lastData[1];
-    s << "\tY: " << std::setw(3) << lastData[2] << ", " << std::setw(3) << lastData[3];
-    s << "\tZ: " << std::setw(3) << lastData[4] << ", " << std::setw(3) << lastData[5];
+    s << "X: " << std::setw(3) << last_data[0] << ", " << std::setw(3) << last_data[1];
+    s << "\tY: " << std::setw(3) << last_data[2] << ", " << std::setw(3) << last_data[3];
+    s << "\tZ: " << std::setw(3) << last_data[4] << ", " << std::setw(3) << last_data[5];
     return s.str();
 }
+#endif
 
 float GyroI2C::getX() const {
-    return axisData[0];
+    return axis_data[0];
 }
 
 float GyroI2C::getY() const {
-    return axisData[1];
+    return axis_data[1];
 }
 
 float GyroI2C::getZ() const {
-    return axisData[2];
+    return axis_data[2];
 }
 
 void GyroI2C::readData() {
     const auto n = 6;
-    int *deliveredData = lastData;
+    int *delivered_data = last_data;
     while (run) {
         for (int i = 0; i < n; i++) {
-            deliveredData[i] = wiringPiI2CReadReg8(gyro, reg::OUT_X_L + i);
+            delivered_data[i] = wiringPiI2CReadReg8(gyro, reg::OUT_X_L + i);
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
-            auto d = normalizationAxis(deliveredData[j + 1], deliveredData[j]);
-            axisData[i] += (std::abs(d) > noiseData[i]) ? d : .0f;
+            auto d = normalizationAxis(delivered_data[j + 1], delivered_data[j]);
+            axis_data[i] += (std::abs(d) > noise_data[i]) ? d : .0f;
         }
         while ((wiringPiI2CReadReg8(gyro, reg::IS_NEW_DATA_READY) & reg::DATA_READY) != reg::DATA_READY) {
             std::this_thread::sleep_for(1ms);

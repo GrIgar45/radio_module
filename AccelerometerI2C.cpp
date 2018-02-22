@@ -19,3 +19,43 @@ AccelerometerI2C::AccelerometerI2C(int deviceAddress) : axisData{0, 0, 0}, lastD
         std::cout << std::hex << data << std::endl;
     }
 }
+
+void AccelerometerI2C::calibrate() {
+
+}
+
+void AccelerometerI2C::calibrate(std::chrono::milliseconds milliseconds) {
+
+}
+
+void AccelerometerI2C::stop() {
+
+}
+
+std::ostream &operator<<(std::ostream &s, const AccelerometerI2C &data) {
+    return  s;
+}
+
+std::string AccelerometerI2C::toStringLastData() {
+    return std::__cxx11::string();
+}
+
+int AccelerometerI2C::getX() const {
+    return 0;
+}
+
+int AccelerometerI2C::getY() const {
+    return 0;
+}
+
+int AccelerometerI2C::getZ() const {
+    return 0;
+}
+
+float AccelerometerI2C::normalizationAxis(int H, int L) {
+    return 0;
+}
+
+void AccelerometerI2C::readData() {
+
+}
