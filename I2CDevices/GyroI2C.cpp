@@ -21,8 +21,8 @@ GyroI2C::GyroI2C(int deviceAddress)
     if (gyro == -1) {
         throw std::runtime_error("Can't setup the I2C device.");
     }
-    int data = wiringPiI2CReadReg8(gyro, reg::WHO_AM_I);
-    if (data != reg::GYRO_NAME) {
+    int data = wiringPiI2CReadReg8(gyro, ERegisters::WHO_AM_I);
+    if (data != ERegisters::GYRO_NAME) {
         throw std::runtime_error("L3GD20 is not working.");
     }
     std::this_thread::sleep_for(10ms);
@@ -35,11 +35,11 @@ GyroI2C::GyroI2C(int deviceAddress)
      * y axis  ^|
      * x axis   ^
      */
-    wiringPiI2CWriteReg8(gyro, reg::CTRL_REG1, reg::NORMAL_MODE);
+    wiringPiI2CWriteReg8(gyro, ERegisters::CTRL_REG1, ERegisters::NORMAL_MODE);
     // Check the set value
     // It should be the same as it was established
-    data = wiringPiI2CReadReg8(gyro, reg::CTRL_REG1);
-    if (data != reg::NORMAL_MODE) {
+    data = wiringPiI2CReadReg8(gyro, ERegisters::CTRL_REG1);
+    if (data != ERegisters::NORMAL_MODE) {
         throw std::runtime_error("Can't turn on axis and switch to normal mode.");
     }
     /**
@@ -48,8 +48,8 @@ GyroI2C::GyroI2C(int deviceAddress)
      * 0x10 - 500 dps;
      * 0x20 - 2000 dps;
      */
-    wiringPiI2CWriteReg8(gyro, reg::CTRL_REG4, 0x20);
-    data = wiringPiI2CReadReg8(gyro, reg::CTRL_REG4);
+    wiringPiI2CWriteReg8(gyro, ERegisters::CTRL_REG4, 0x20);
+    data = wiringPiI2CReadReg8(gyro, ERegisters::CTRL_REG4);
     if (data != 0x20) {
         throw std::runtime_error("Can't set DPS value.");
     }
@@ -67,14 +67,14 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
     while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start) <
            (milliseconds - 2s)) {
         for (int i = 0; i < n; i++) {
-            tmp_axis_data[i] = wiringPiI2CReadReg8(gyro, reg::OUT_X_L + i);
+            tmp_axis_data[i] = wiringPiI2CReadReg8(gyro, ERegisters::OUT_X_L + i);
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
             auto d = std::abs(normalizationAxis(tmp_axis_data[j + 1], tmp_axis_data[j]));
             noise_data[i] = (d > noise_data[i] && d < 100) ? d : noise_data[i];
         }
-        while ((wiringPiI2CReadReg8(gyro, reg::IS_NEW_DATA_READY) & reg::DATA_READY) != reg::DATA_READY) {
+        while ((wiringPiI2CReadReg8(gyro, ERegisters::IS_NEW_DATA_READY) & ERegisters::DATA_READY) != ERegisters::DATA_READY) {
             std::this_thread::sleep_for(1ms);
         }
     }
@@ -82,9 +82,12 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
         noise_data[i] = noise_data[i] * 2;
     }
     std::stringstream s;
+#ifndef NDEBUG
     s << std::fixed << std::setprecision(3);
-    s << "Calibration successful. X: " << noise_data[0] << " Y: " << noise_data[1] << " Z: " << noise_data[2] << std::endl;
+    s << "Calibration successful. X: " << noise_data[0] << " Y: " << noise_data[1] << " Z: " << noise_data[2]
+      << std::endl;
     std::cout << s.str();
+#endif
     calibrated = 1;
     run = true;
     reading = new std::thread(&GyroI2C::readData, this);
@@ -134,14 +137,14 @@ void GyroI2C::readData() {
     int *delivered_data = last_data;
     while (run) {
         for (int i = 0; i < n; i++) {
-            delivered_data[i] = wiringPiI2CReadReg8(gyro, reg::OUT_X_L + i);
+            delivered_data[i] = wiringPiI2CReadReg8(gyro, ERegisters::OUT_X_L + i);
         }
         for (int i = 0; i < 3; i++) {
             auto j = i << 1;
             auto d = normalizationAxis(delivered_data[j + 1], delivered_data[j]);
-            axis_data[i] += (std::abs(d) > noise_data[i]) ? d : .0f;
+            axis_data[i] += (std::abs(d) > noise_data[i]) ? d : 0.f;
         }
-        while ((wiringPiI2CReadReg8(gyro, reg::IS_NEW_DATA_READY) & reg::DATA_READY) != reg::DATA_READY) {
+        while ((wiringPiI2CReadReg8(gyro, ERegisters::IS_NEW_DATA_READY) & ERegisters::DATA_READY) != ERegisters::DATA_READY) {
             std::this_thread::sleep_for(1ms);
         }
     }

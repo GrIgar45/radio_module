@@ -37,7 +37,7 @@ struct GyroI2C {
     float normalizationAxis(int H, int L);
 
 private:
-    enum reg {
+    enum ERegisters {
         WHO_AM_I = 0x0f,
         GYRO_NAME = 0xd4,
         CTRL_REG1 = 0x20,
