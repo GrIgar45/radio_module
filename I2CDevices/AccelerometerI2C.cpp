@@ -18,10 +18,6 @@ AccelerometerI2C::AccelerometerI2C(int deviceAddress) : axis_data { 0, 0, 0 }, l
     if (accelerometer_file_description == -1) {
         throw std::runtime_error("Can't setup the I2C device.");
     }
-    for (int i = 0; i < 10; i++) {
-        int data = wiringPiI2CReadReg8(accelerometer_file_description, (int)ERegisters::WHAT_IS_MY_ADDRESS);
-        std::cout << std::hex << data << std::endl;
-    }
     this->setSensitivityAndMode(ESensitivity::G2, EMode::MEASURE);
 }
 
