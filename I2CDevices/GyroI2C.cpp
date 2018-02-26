@@ -81,8 +81,8 @@ void GyroI2C::calibrate(std::chrono::milliseconds milliseconds) {
     for (int i = 0; i < 3; i++) {
         noise_data[i] = noise_data[i] * 2;
     }
-    std::stringstream s;
 #ifndef NDEBUG
+    std::stringstream s;
     s << std::fixed << std::setprecision(3);
     s << "Calibration successful. X: " << noise_data[0] << " Y: " << noise_data[1] << " Z: " << noise_data[2]
       << std::endl;

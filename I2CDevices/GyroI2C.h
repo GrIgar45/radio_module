@@ -27,7 +27,7 @@ struct GyroI2C {
     std::string toStringLastData();
 
 #endif
-    
+
     float getX() const;
 
     float getY() const;
