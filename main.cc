@@ -27,8 +27,9 @@ int main(int argc, char *argv[]) {
 //        std::this_thread::sleep_for(100ms);
 //    }
     AccelerometerI2C i2C(reg::ACCELER_ADDRESS);
+    i2C.calibrate();
     while (true) {
-        i2C.calibrate();
         std::cout << i2C << std::endl;
+        std::this_thread::sleep_for(100ms);
     }
 }
