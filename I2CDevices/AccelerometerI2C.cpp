@@ -171,7 +171,9 @@ void AccelerometerI2C::read10BitData(float *XYZ) {
         auto l = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::X_OUT_L_10_BIT + i * 2);
         auto h = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::X_OUT_L_10_BIT + i * 2 + 1);
         XYZ[i] = normalizationAxisToGValue(h, l);
+        std::cout << XYZ[i] << std::endl;
     }
+    std::cout << std::endl;
 }
 
 float AccelerometerI2C::read10BitData(AccelerometerI2C::EAxis axis) {
