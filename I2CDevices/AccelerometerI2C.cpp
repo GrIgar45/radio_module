@@ -29,7 +29,7 @@ void AccelerometerI2C::calibrate(std::chrono::milliseconds milliseconds) {
     std::this_thread::sleep_for(2s);
     milliseconds = milliseconds - 2s;
     auto start = std::chrono::steady_clock::now();
-    float data[3];
+    int data[3];
     while (std::chrono::duration_cast < std::chrono::milliseconds >(std::chrono::steady_clock::now() - start) <
            milliseconds) {
         read10BitData(data);
@@ -39,7 +39,7 @@ void AccelerometerI2C::calibrate(std::chrono::milliseconds milliseconds) {
         }
     }
     for (int i = 0; i < 3; i++) {
-        noise_data[i] = noise_data[i] * 1.25f;
+        noise_data[i] = (int)(noise_data[i] * 1.25);
     }
 #ifndef NDEBUG
     std::stringstream s;
@@ -113,15 +113,15 @@ std::ostream &operator<<(std::ostream &ostream, const AccelerometerI2C &data) {
 //    return std::__cxx11::string();
 //}
 
-float AccelerometerI2C::getX() const {
+int AccelerometerI2C::getX() const {
     return this->axis_data[0];
 }
 
-float AccelerometerI2C::getY() const {
+int AccelerometerI2C::getY() const {
     return this->axis_data[1];
 }
 
-float AccelerometerI2C::getZ() const {
+int AccelerometerI2C::getZ() const {
     return this->axis_data[2];
 }
 
@@ -131,7 +131,7 @@ void AccelerometerI2C::setAxisOffset(int x, int y, int z) {
 
 void AccelerometerI2C::readingLoop() {
     const int N = 3;
-    float data[N];
+    int data[N];
     while (run) {
         read10BitData(data);
         for (int i = 0; i < N; ++i) {
@@ -140,7 +140,9 @@ void AccelerometerI2C::readingLoop() {
     }
 }
 
-float AccelerometerI2C::normalizationAxisToGValue(int high_byte, int low_byte, ENormalizeType type = ENormalizeType::bit10) {
+int AccelerometerI2C::normalizationAxisToGValue(int high_byte,
+                                                int low_byte,
+                                                ENormalizeType type = ENormalizeType::bit10) {
     auto is10Bit = (type == ENormalizeType::bit10);
     auto sign_mask = is10Bit ? 0x02 : 0x80;
     auto sign = ((high_byte & sign_mask) == 0) ? 1 : -1;
@@ -162,10 +164,10 @@ float AccelerometerI2C::normalizationAxisToGValue(int high_byte, int low_byte, E
 //    value /= 256.f;
 //    value *= number;
 
-    return number / 64.0f;
+    return number;
 }
 
-void AccelerometerI2C::read10BitData(float *XYZ) {
+void AccelerometerI2C::read10BitData(int *XYZ) {
     const int n = 3;
     for (int i = 0; i < n; ++i) {
         auto l = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::X_OUT_L_10_BIT + i * 2);

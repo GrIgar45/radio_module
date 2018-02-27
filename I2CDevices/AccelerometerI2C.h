@@ -38,11 +38,11 @@ struct AccelerometerI2C {
 
 //    std::string toStringLastData();
 
-    float getX() const;
+    int getX() const;
 
-    float getY() const;
+    int getY() const;
 
-    float getZ() const;
+    int getZ() const;
 
 private:
     enum ERegisters {
@@ -71,8 +71,8 @@ private:
     };
     enum class EAxis { X, Y, Z };
     std::thread *reading;
-    float axis_data[3];
-    float noise_data[3];
+    int axis_data[3];
+    int noise_data[3];
 //    float last_data[3];
     int sensitivity;
 
@@ -91,9 +91,9 @@ private:
     enum class ENormalizeType {
         bit10, bit16
     };
-    float normalizationAxisToGValue(int high_byte, int low_byte, ENormalizeType type);
+    int normalizationAxisToGValue(int high_byte, int low_byte, ENormalizeType type);
 
-    void read10BitData(float *XYZ);
+    void read10BitData(int *XYZ);
 
     float read10BitData(EAxis axis);
 
