@@ -153,8 +153,9 @@ void GyroI2C::readData() {
 float GyroI2C::normalizationAxis(int H, int L) {
     // is it H less than 128 ? the data is positive : negative
     auto sign = (H < 0x7f) ? 1 : -1;
+    auto value = (H << 8) | L;
     if (sign == -1) {
-        H = 0xff - H;
+        value = value - 0xff;
     }
     /**
      * Shift the high bits and remove the sign value.
@@ -163,5 +164,5 @@ float GyroI2C::normalizationAxis(int H, int L) {
      + FS = 500  dps     17.50
      + FS = 2000 dps     70
      */
-    return (H << 8 | L) * 0.00070f * sign;
+    return value * 0.00070f;
 }

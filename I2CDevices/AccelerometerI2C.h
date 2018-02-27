@@ -66,13 +66,15 @@ private:
         Y_OUT_L_10_BIT = 0x02,
         Z_OUT_L_10_BIT = 0x04,
         HIGH_BIT_MASK = 0x03,
-        LOW_BIT_MASK = 0xFF
+        LOW_BIT_MASK = 0xFF,
+        MINUS_10_BIT_MASK = (-1 & ~0x3FF),
+        MINUS_8_BIT_MASK = (-1 & ~0xFF)
     };
     enum class EAxis { X, Y, Z };
     std::thread *reading;
     float axis_data[3];
     float noise_data[3];
-    float last_data[3];
+//    float last_data[3];
     int sensitivity;
 
     int accelerometer_file_description = -1;
@@ -87,11 +89,18 @@ private:
 
     void readingLoop();
 
-    float normalizationAxisToGValue(int high_byte, int low_byte);
+    enum class ENormalizeType {
+        bit10, bit16
+    };
+    float normalizationAxisToGValue(int high_byte, int low_byte, ENormalizeType type);
 
     void read10BitData(float *XYZ);
 
     float read10BitData(EAxis axis);
+
+    void read16BitData(float *XYZ);
+
+    float read16BitData(EAxis axis);
 };
 
 
