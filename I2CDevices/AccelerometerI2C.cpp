@@ -12,7 +12,7 @@
 
 using namespace std::chrono_literals;
 
-AccelerometerI2C::AccelerometerI2C(int deviceAddress) : axis_data { 0, 0, 0 } {
+AccelerometerI2C::AccelerometerI2C(int deviceAddress) {
     wiringPiSetup();
     accelerometer_file_description = wiringPiI2CSetup(deviceAddress);
     if (accelerometer_file_description == -1) {
@@ -21,26 +21,34 @@ AccelerometerI2C::AccelerometerI2C(int deviceAddress) : axis_data { 0, 0, 0 } {
     this->setSensitivityAndMode(ESensitivity::G2, EMode::MEASURE);
 }
 
-void AccelerometerI2C::calibrate() {
-    calibrate(5s);
+void AccelerometerI2C::calibrate(int x, int y, int z) {
+    calibrate(5s, x, y, z);
 }
 
-void AccelerometerI2C::calibrate(std::chrono::milliseconds milliseconds) {
+void AccelerometerI2C::calibrate(std::chrono::milliseconds milliseconds, int x, int y, int z) {
+    setAxisOffset(x, y, z);
+#ifndef NDEBUG
+    auto xyz = getAxisOffset();
+    std::cout << "Offset is ";
+    for (auto offset : xyz) {
+        std::cout << offset << " : ";
+    }
+    std::cout << std::endl;
+#endif
+    this->run = true;
+    this->reading = new std::thread(&AccelerometerI2C::readingLoop, this);
     std::this_thread::sleep_for(2s);
-    milliseconds = milliseconds - 2s;
-    auto start = std::chrono::steady_clock::now();
-    int data[3];
-    while (std::chrono::duration_cast < std::chrono::milliseconds >(std::chrono::steady_clock::now() - start) <
-           milliseconds) {
-        read10BitData(data);
-        for (int i = 0; i < 3; i++) {
-            auto d = std::abs(data[i]);
-            noise_data[i] = (d > noise_data[i] && d < 100) ? d : noise_data[i];
-        }
-    }
-    for (int i = 0; i < 3; i++) {
-        noise_data[i] = (int)(noise_data[i] * 1.25);
-    }
+//    milliseconds = milliseconds - 2s;
+//    auto start = std::chrono::steady_clock::now();
+//    while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start) <
+//           milliseconds) {
+//        for (int i = 0; i < 3; i++) {
+//            auto d = std::abs(last_data[i]);
+//            noise_values[i] = (d > noise_values[i] && d < 10.0f) ? d : noise_values[i];
+//        }
+//        std::this_thread::sleep_for(
+//                std::chrono::duration_cast<std::chrono::milliseconds>(10ms));
+//    }
 #ifndef NDEBUG
     std::stringstream s;
     s << std::fixed << std::setprecision(3);
@@ -48,9 +56,7 @@ void AccelerometerI2C::calibrate(std::chrono::milliseconds milliseconds) {
       << std::endl;
     std::cout << s.str();
 #endif
-    calibrated = 1;
-    run = true;
-    reading = new std::thread(&AccelerometerI2C::readingLoop, this);
+    this->calibrated = 1;
 }
 
 bool AccelerometerI2C::setSensitivity(AccelerometerI2C::ESensitivity sensitivity) {
@@ -69,7 +75,7 @@ bool AccelerometerI2C::setSensitivity(AccelerometerI2C::ESensitivity sensitivity
             selected = ERegisters::MCTL_8G;
             break;
     }
-    return this->writeMctlValueAndCheck(selected, ERegisters::MCTL_GLVL_MASK);
+    return this->writeMctlValueAndCheck(selected << 2, ERegisters::MCTL_GLVL_MASK);
 }
 
 bool AccelerometerI2C::setMode(AccelerometerI2C::EMode mode) {
@@ -92,90 +98,141 @@ bool AccelerometerI2C::setMode(AccelerometerI2C::EMode mode) {
 }
 
 bool AccelerometerI2C::setSensitivityAndMode(AccelerometerI2C::ESensitivity sensitivity, AccelerometerI2C::EMode mode) {
-    return this->setSensitivity(sensitivity) && this->setMode(mode);
+    return setMode(mode) && setSensitivity(sensitivity);
 }
 
 void AccelerometerI2C::stop() {
+    if (!this->run) { return; }
     this->run = false;
     this->reading->join();
+    delete this->reading;
 }
 
 std::ostream &operator<<(std::ostream &ostream, const AccelerometerI2C &data) {
-    ostream << "Position\n";
-    ostream << std::setfill(' ');
-    ostream << "X: " << std::setw(7) << data.getX();
-    ostream << "\tY: " << std::setw(7) << data.getY();
-    ostream << "\tZ: " << std::setw(7) << data.getZ();
+    std::stringstream stringstream;
+    stringstream << std::fixed;
+    stringstream << "Position\n";
+    stringstream << std::setfill(' ');
+    stringstream << "X: " << std::setw(7) << std::setprecision(3) << data.getX();
+    stringstream << "\tY: " << std::setw(7) << std::setprecision(3) << data.getY();
+    stringstream << "\tZ: " << std::setw(7) << std::setprecision(3) << data.getZ();
+    stringstream << std::endl;
+    stringstream << "Gravity\n";
+    stringstream << "X: " << std::setw(7) << data.convertToGForce(data.gravity[0]);
+    stringstream << "\tY: " << std::setw(7) << data.convertToGForce(data.gravity[1]);
+    stringstream << "\tZ: " << std::setw(7) << data.convertToGForce(data.gravity[2]);
+    ostream << stringstream.str();
     return ostream;
 }
 
-//std::string AccelerometerI2C::toStringLastData() {
-//    return std::__cxx11::string();
-//}
-
-int AccelerometerI2C::getX() const {
-    return this->axis_data[0];
+float AccelerometerI2C::getX() const {
+    static const auto index = 0;
+    auto ret = convertToGForce(last_data[index]) - convertToGForce(gravity[index]);
+    return ret;
 }
 
-int AccelerometerI2C::getY() const {
-    return this->axis_data[1];
+float AccelerometerI2C::getY() const {
+    static const auto index = 1;
+    auto ret = convertToGForce(last_data[index]) - convertToGForce(gravity[index]);
+    return ret;
 }
 
-int AccelerometerI2C::getZ() const {
-    return this->axis_data[2];
+float AccelerometerI2C::getZ() const {
+    static const auto index = 2;
+    auto ret = convertToGForce(last_data[index]) - convertToGForce(gravity[index]);
+    return ret;
 }
 
 void AccelerometerI2C::setAxisOffset(int x, int y, int z) {
+    const auto MASK_LOW_BIT = 0xfF;
+    const auto MASK_HIGH_BIT = 0x7;
+    auto i = 0;
+    for (auto xyz : { x, y, z }) {
+        wiringPiI2CWriteReg8(this->accelerometer_file_description, ERegisters::XOFFL + (i << 1), xyz & MASK_LOW_BIT);
+        wiringPiI2CWriteReg8(this->accelerometer_file_description, ERegisters::XOFFL + (i << 1) + 1,
+                             (xyz >> 8) & MASK_HIGH_BIT);
+        ++i;
+    }
+}
 
+std::array<int, 3> AccelerometerI2C::getAxisOffset() {
+    std::array<int, 3> offset_data { 0, 0, 0 };
+    for (int i = 0; i < 3; i++) {
+        auto l = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::XOFFL + (i << 1));
+        auto h = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::XOFFL + (i << 1) + 1);
+        offset_data[i] = (h << 8) | l;
+    }
+    return offset_data;
 }
 
 void AccelerometerI2C::readingLoop() {
-    const int N = 3;
-    int data[N];
+    const auto n = 3;
+
     while (run) {
-        read10BitData(data);
-        for (int i = 0; i < N; ++i) {
-            this->axis_data[i] += (data[i] < this->noise_data[i]) ? 0 : data[i];
-        }
+        read8BitData(last_data);
+        std::this_thread::sleep_for(3ms);
     }
 }
 
-int AccelerometerI2C::normalizationAxisToGValue(int high_byte,
-                                                int low_byte,
-                                                ENormalizeType type = ENormalizeType::bit10) {
-    auto is10Bit = (type == ENormalizeType::bit10);
-    auto sign_mask = is10Bit ? 0x02 : 0x80;
-    auto sign = ((high_byte & sign_mask) == 0) ? 1 : -1;
-
-    if (is10Bit) {
-        high_byte &= ERegisters::HIGH_BIT_MASK;
-        // useless
-        // low_byte &= ERegisters::LOW_BIT_MASK;
-    }
+AccelerometerI2C::GData AccelerometerI2C::normalization10BitsAxisToGValue(int high_byte, int low_byte) {
+    auto sign = ((high_byte & 0b10) == 0) ? 1 : -1;
+    high_byte &= ERegisters::BIT_2_MASK;
+    low_byte &= ERegisters::BIT_8_MASK;
 
     int number = (high_byte << 8) | low_byte;
 
-    if (sign == -1) {
-        const auto MASK = is10Bit? ERegisters::MINUS_10_BIT_MASK : ERegisters::MINUS_8_BIT_MASK;
-        number = number | MASK;
-    }
+    if (number == 0) { return 0; }
 
-//    float value = 2.0f * sensitivity;
-//    value /= 256.f;
-//    value *= number;
+    if (sign == -1) { number |= ERegisters::MINUS_10_BIT_MASK; }
 
     return number;
 }
 
-void AccelerometerI2C::read10BitData(int *XYZ) {
+AccelerometerI2C::GData AccelerometerI2C::normalization8BitsAxisToGValue(int byte) {
+    auto sign = ((byte & 128) == 0) ? 1 : -1;
+    byte &= ERegisters::BIT_8_MASK;
+
+    if (byte == 0) { return 0; }
+
+    if (sign == -1) { byte |= ERegisters::MINUS_8_BIT_MASK; }
+
+    return byte;
+}
+//                                                              1.5  96             1.0  64
+//                                                              0.3  19             0.8  51
+//                                                                                  1.1  70
+float AccelerometerI2C::updateGravity(AccelerometerI2C::GData axis_value, float old_gravity) {
+    const auto alpha = 0.8f;
+    return (alpha * old_gravity + (1 - alpha) * axis_value);
+}
+
+inline float AccelerometerI2C::convertToGForce(AccelerometerI2C::GData value) const {
+    return convertToGForce((float)(value));
+}
+
+inline float AccelerometerI2C::convertToGForce(float value) const {
+    return (value) / (128 / this->sensitivity);
+}
+
+void AccelerometerI2C::writeMctlValue(int value, int mask) {
+    auto val = (wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::MCTL) & ~mask) | value;
+    wiringPiI2CWriteReg8(this->accelerometer_file_description, ERegisters::MCTL, val);
+}
+
+bool AccelerometerI2C::writeMctlValueAndCheck(int value, int mask) {
+    writeMctlValue(value, mask);
+    auto val = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::MCTL) & mask;
+    return (val == value);
+}
+
+void AccelerometerI2C::read10BitData(GData *xyz) {
     const int n = 3;
     for (int i = 0; i < n; ++i) {
-        auto l = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::X_OUT_L_10_BIT + i * 2);
-        auto h = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::X_OUT_L_10_BIT + i * 2 + 1);
-        XYZ[i] = normalizationAxisToGValue(h, l);
-        std::cout << XYZ[i] << std::endl;
+        auto l = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::X_OUT_L_10_BIT + (i << 1));
+        auto h = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::X_OUT_L_10_BIT + (i << 1) + 1);
+        xyz[i] = normalization10BitsAxisToGValue(h, l);
+        gravity[i] = updateGravity(xyz[i], gravity[i]);
     }
-    std::cout << std::endl;
 }
 
 float AccelerometerI2C::read10BitData(AccelerometerI2C::EAxis axis) {
@@ -194,29 +251,34 @@ float AccelerometerI2C::read10BitData(AccelerometerI2C::EAxis axis) {
             h = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::Z_OUT_L_10_BIT + 1);
             break;
     }
-    return normalizationAxisToGValue(h, l);
+    return normalization10BitsAxisToGValue(h, l);
 }
 
-void AccelerometerI2C::writeMctlValue(int value, int mask) {
-    int val = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::MCTL) & mask;
-    wiringPiI2CWriteReg8(this->accelerometer_file_description, ERegisters::MCTL, value & ~val);
-}
-
-bool AccelerometerI2C::writeMctlValueAndCheck(int value, int mask) {
-    writeMctlValue(value, mask);
-    int val = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::MCTL) & mask;
-    return (val == value);
-}
-
-void AccelerometerI2C::read16BitData(float *XYZ) {
-    const int n = 3;
-    for (int i = 0; i < n; ++i) {
-        auto l = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::X_OUT_L_10_BIT + i * 2);
-        auto h = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::X_OUT_L_10_BIT + i * 2 + 1);
-        XYZ[i] = normalizationAxisToGValue(h, l);
+void AccelerometerI2C::read8BitData(GData *xyz) {
+    const int N = 3;
+    for (int i = 0; i < N; ++i) {
+        auto val = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::X_OUT_L_8_BIT + i);
+        val = normalization8BitsAxisToGValue(val);
+//        val = (std::abs(val) > noise_values[i]) ? val : 0;
+        gravity[i] = updateGravity(val, gravity[i]);
+        xyz[i] = val;
     }
 }
 
-float AccelerometerI2C::read16BitData(AccelerometerI2C::EAxis axis) {
-    return 0;
+float AccelerometerI2C::read8BitData(AccelerometerI2C::EAxis axis) {
+    int val;
+    switch (axis) {
+        case (EAxis::X) :
+            val = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::X_OUT_L_8_BIT);
+            break;
+        case (EAxis::Y) :
+            val = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::Y_OUT_L_8_BIT);
+            break;
+        case (EAxis::Z) :
+            val = wiringPiI2CReadReg8(this->accelerometer_file_description, ERegisters::Z_OUT_L_8_BIT);
+            break;
+    }
+    return normalization8BitsAxisToGValue(val);
 }
+
+

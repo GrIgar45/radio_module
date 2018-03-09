@@ -9,6 +9,7 @@
 #include <chrono>
 #include <ostream>
 #include <thread>
+#include <mutex>
 
 
 struct AccelerometerI2C {
@@ -22,9 +23,9 @@ struct AccelerometerI2C {
 
     AccelerometerI2C(int deviceAddress);
 
-    void calibrate();
+    void calibrate(int x, int y, int z);
 
-    void calibrate(std::chrono::milliseconds milliseconds);
+    void calibrate(std::chrono::milliseconds milliseconds, int x, int y, int z);
 
     bool setSensitivity(ESensitivity sensitivity);
 
@@ -38,13 +39,14 @@ struct AccelerometerI2C {
 
 //    std::string toStringLastData();
 
-    int getX() const;
+    float getX() const;
 
-    int getY() const;
+    float getY() const;
 
-    int getZ() const;
+    float getZ() const;
 
 private:
+    typedef int GData;
     enum ERegisters {
         WHO_AM_I = 0x0f,
         GYRO_NAME = 0xd4,
@@ -61,19 +63,29 @@ private:
         MCTL_MEASUMENT = 0x01,
         MCTL_LEVEL = 0x02,
         MCTL_PULSE = 0x03,
+        XOFFL = 0x10,
+        YOFFL = 0x12,
+        ZOFFL = 0x14,
         X_OUT_L_10_BIT = 0x00,
         Y_OUT_L_10_BIT = 0x02,
         Z_OUT_L_10_BIT = 0x04,
-        HIGH_BIT_MASK = 0x03,
-        LOW_BIT_MASK = 0xFF,
+        X_OUT_L_8_BIT = 0x06,
+        Y_OUT_L_8_BIT = 0x07,
+        Z_OUT_L_8_BIT = 0x08,
+        BIT_2_MASK = 0x03,
+        BIT_8_MASK = 0xFF,
+        BITS10_POSITIVE_MAX_VALUE = 0x1FF,
+        BITS8_POSITIVE_MAX_VALUE = 0xFF,
         MINUS_10_BIT_MASK = (-1 & ~0x3FF),
-        MINUS_8_BIT_MASK = (-1 & ~0xFF)
+        MINUS_8_BIT_MASK = (-1 & ~BITS8_POSITIVE_MAX_VALUE)
     };
     enum class EAxis { X, Y, Z };
     std::thread *reading;
-    int axis_data[3];
-    int noise_data[3];
-//    float last_data[3];
+    mutable std::mutex mutex;
+
+    GData noise_values[3];
+    float gravity[3];
+    GData last_data[3];
     int sensitivity;
 
     int accelerometer_file_description = -1;
@@ -86,20 +98,31 @@ private:
 
     void setAxisOffset(int x, int y, int z);
 
+    std::array<int, 3> getAxisOffset();
+
     void readingLoop();
 
     enum class ENormalizeType {
         bit10, bit16
     };
-    int normalizationAxisToGValue(int high_byte, int low_byte, ENormalizeType type);
 
-    void read10BitData(int *XYZ);
+    GData normalization10BitsAxisToGValue(int high_byte, int low_byte);
+
+    GData normalization8BitsAxisToGValue(int byte);
+
+    float updateGravity(AccelerometerI2C::GData axis_value, float old_gravity);
+
+    float convertToGForce(GData value) const;
+
+    float convertToGForce(float value) const;
+
+    void read10BitData(GData *xyz);
 
     float read10BitData(EAxis axis);
 
-    void read16BitData(float *XYZ);
+    void read8BitData(GData *xyz);
 
-    float read16BitData(EAxis axis);
+    float read8BitData(EAxis axis);
 };
 
 
